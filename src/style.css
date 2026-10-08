@@ -1,0 +1,15 @@
+/*
+ * Same global stylesheet production apps get from the design system:
+ * tokens.css, Lato font faces, Tailwind layers, .ds-scroll-* primitives, base type.
+ */
+@import '../../linarc-design-components/src/styles/global.css';
+
+/*
+ * Sandbox overrides. global.css hardcodes `body { color: #06152b }`, which breaks
+ * dark mode; re-bind body to semantic tokens so both themes render correctly.
+ */
+body {
+  margin: 0;
+  color: var(--text-default);
+  background-color: var(--surface-page);
+}
