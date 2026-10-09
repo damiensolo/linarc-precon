@@ -50,10 +50,17 @@ export default defineConfig(({ mode }) => ({
       { find: /^~(?!\/)(.+)$/, replacement: path.resolve(DS_ROOT, 'node_modules') + '/$1' },
       // This sandbox's own source: `~/prototypes/...`
       { find: /^~\//, replacement: path.resolve(__dirname, 'src') + '/' },
+      // CommonJS `clamp` (a dependency of the text editor's colour picker) imported as a default export; served raw
+      // in dev because it lives in the library's node_modules. ESM shim. F-036.
+      { find: /^clamp$/, replacement: path.resolve(__dirname, 'src/shims/clamp.js') },
     ],
     // Library files would otherwise resolve `vue` from the library's own node_modules,
     // giving two Vue instances (breaks portal-vue, vuex, v-click-outside, etc.).
     dedupe: ['vue'],
+    // The library imports directories that only hold an `index.vue` (`@/components/TextEditorV2`), which webpack
+    // resolves through its `.vue` extension. Vite's default list has no `.vue`, so FormV2 (via RichTextField) failed to
+    // build until it was added. F-036.
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
   },
   server: {
     port: 5173,

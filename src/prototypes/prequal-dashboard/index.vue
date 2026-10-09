@@ -1,8 +1,8 @@
 <template>
   <!-- Preconstruction › Prequalification › Overview: the GC Request Dashboard (docs/prequal/screens.md §1).
        KPI cards filter the table; rows open the review screen or the qualification record (router.js).
-       Reviewer sees Score · Confidence; the Estimator/PM view hides it (PRD §10). No Figma frame yet: this screen is
-       pushed to Figma as the reference (prd-to-prototype step 6). -->
+       Reviewer sees Score · Confidence; the Estimator/PM view hides it (PRD §10). Rows and columns are shared with the
+       Requests screen (src/modules/prequal/requestColumns.js). Figma reference: prd-to-prototype step 6. -->
   <PrequalShell screen="dashboard" title="Overview">
     <template #header-actions>
       <span class="hidden sm:inline-flex items-center gap-space-8">
@@ -60,18 +60,9 @@ import DataGrid from '@/components/DataGrid/index.vue';
 import SegmentedControl from '@/componentsV2/SegmentedControl/SegmentedControl.vue';
 import PrequalShell from '~/modules/prequal/PrequalShell.vue';
 import KpiCard from '~/candidates/KpiCard/KpiCard.vue';
-import '~/modules/prequal/gridSlots';
-import { requestRows, TODAY } from '~/modules/prequal/data';
-import { KPI, ROLES, toneToChipStatus } from '~/modules/prequal/status';
+import { requestGridRows, requestColumns, screenFor } from '~/modules/prequal/requestColumns';
+import { KPI } from '~/modules/prequal/status';
 import { go } from '~/modules/prequal/router';
-
-// Where a row leads: approved → the qualification record; anything with a submission → the review screen.
-const screenFor = (row) => (row.outcome && row.outcome !== 'not-qualified' ? 'record' : 'review');
-const actionLabel = (row) => {
-  if (KPI.readyForReview(row)) return 'Review now';
-  if (row.outcome && row.outcome !== 'not-qualified') return 'View record';
-  return 'Open';
-};
 
 export default {
   name: 'PrequalDashboard',
@@ -92,11 +83,7 @@ export default {
   },
   computed: {
     rows() {
-      return requestRows().map((r) => ({
-        ...r,
-        statusLabel: r.status.label,
-        activityText: `${this.$moment(r.activity[0]).format('D MMM')} · ${r.activity[1]}`,
-      }));
+      return requestGridRows(this.$moment);
     },
     filteredRows() {
       return this.selectedKpi ? this.rows.filter(KPI[this.selectedKpi]) : this.rows;
@@ -116,57 +103,7 @@ export default {
       ];
     },
     columns() {
-      const reviewer = ROLES[this.role].seesScore;
-      const open = (row) => this.openRow({ row });
-      // A cell with only a `center` slot is centred by DecoratedCell; pin the slot `left` (or `right`) and blank the
-      // centre text so the column value stays available for sorting and filtering without rendering twice.
-      const BLANK = { type: 'text', componentProps: { value: '' } };
-      const cols = [
-        { field: 'companyName', label: 'SUBCONTRACTOR', type: 'ShortText', width: 250, readonly: true, frozen: true },
-        { field: 'trade', label: 'TRADE', type: 'ShortText', width: 140, readonly: true },
-        { field: 'project', label: 'PROJECT', type: 'ShortText', width: 170, readonly: true },
-        { field: 'templateName', label: 'TEMPLATE', type: 'ShortText', width: 230, readonly: true },
-        {
-          field: 'statusLabel',
-          label: 'STATUS',
-          type: 'ShortText',
-          width: 290,
-          readonly: true,
-          cell: {
-            left: {
-              type: 'status-chip',
-              componentProps: { label: (r) => r.status.label, status: (r) => toneToChipStatus(r.status.tone), fillStyle: 'outline', type: 'default' },
-            },
-            center: BLANK,
-          },
-        },
-      ];
-      if (reviewer) {
-        cols.push({
-          field: 'score',
-          label: 'SCORE · CONFIDENCE',
-          type: 'ShortText',
-          width: 170,
-          readonly: true,
-          cell: {
-            left: { type: 'score-confidence', componentProps: { score: (r) => r.score, confidence: (r) => r.confidence, recommendation: (r) => r.recommendation } },
-            center: BLANK,
-          },
-        });
-      }
-      cols.push(
-        { field: 'validUntil', label: 'EXPIRATION', type: 'ShortText', width: 220, readonly: true, cell: { left: { type: 'expiry', componentProps: { date: (r) => r.validUntil, now: TODAY } }, center: BLANK } },
-        { field: 'activityText', label: 'LAST ACTIVITY', type: 'ShortText', width: 300, flex: 1, readonly: true },
-        {
-          field: 'action',
-          label: '',
-          type: 'ShortText',
-          width: 130,
-          readonly: true,
-          cell: { center: BLANK, right: { type: 'button', componentProps: { label: actionLabel, variant: 'text', colorScheme: 'primary', size: 'small' }, onClick: open } },
-        },
-      );
-      return cols;
+      return requestColumns(this.role, (row) => this.openRow({ row }));
     },
   },
   methods: {

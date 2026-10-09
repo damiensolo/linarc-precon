@@ -78,3 +78,11 @@ Include at least one **heavy** component (DataGrid, TopNavBar) in the wiring tes
 ## 7. Start prototyping
 
 Give the agent a Figma frame URL. It follows the skill: read the design, map components and report gaps, fix the design system if needed (flagged and logged), build, verify, record.
+
+## Resolution gaps found later (F-036)
+
+The library was built for webpack; each of these appeared the first time a prototype imported the component that needed it. All are in place now; listed so the next gap is recognised quickly.
+- **Plugins the library expects on the Vue instance:** `Vue.use(PortalVue)`, `Vue.use(Vuelidate)` (InputV2, SelectV2, FormV2), `Vue.prototype.$moment` — mirror `src/build.js` in `src/main.js`.
+- **`.vue` directory imports** (`@/components/TextEditorV2` → `index.vue`): `resolve.extensions` must include `.vue`.
+- **Root-absolute imports** (`/src/components/Icon.vue`) resolve only with the library as root; fix in the library (P-018 lists the 21 occurrences).
+- **CommonJS default imports from the library's node_modules** (`clamp`): Vite doesn't pre-bundle deps resolved from the sibling repo; alias an ESM shim in `src/shims/`.

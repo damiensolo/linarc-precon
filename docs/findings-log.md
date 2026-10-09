@@ -301,3 +301,11 @@ Why it mattered: the whole verification step depends on a browser launch; the er
 How it was caught: a standalone launch test script, then running Edge directly.
 What changed: used the script's existing `EDGE_PATH` override with the installed Chrome (`EDGE_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" yarn shot …`). Added to docs/3-verification.md. Restarting Edge once would also clear it.
 Case study: N.
+
+## F-036 · 2026-10-09 · Four sandbox gaps surfaced the first time a V2 form was rendered
+Tags: tooling, design-system
+What happened: the first screen to use FormV2 / InputV2 / SelectV2 hit four separate failures: (1) `this.$v` undefined: the V2 inputs validate with Vuelidate, which the library installs in `build.js` but the sandbox's `main.js` didn't; (2) `Could not load …/TextEditorV2`: the import names a directory holding only `index.vue`, which webpack resolves through its `.vue` extension and Vite doesn't by default; (3) `Could not resolve '/src/components/Icon.vue'`: a root-absolute import that only works when the bundler root is the library (P-018; 20 more exist in legacy components); (4) `clamp … does not provide an export named 'default'`: a CommonJS dependency of the editor's colour picker, served raw in dev because it lives in the sibling repo's node_modules.
+Why it mattered: each one blocked the whole page; none is visible from the component's API. The dashboard and requests pages never touched this chain.
+How it was caught: `yarn build` for (2) and (3); `yarn shot` page errors for (1) and (4).
+What changed: `src/main.js` installs Vuelidate; `vite.config.mjs` adds `.vue` to `resolve.extensions` and aliases `clamp` to `src/shims/clamp.js`; TextEditorV2's import fixed in the library (P-018). CLAUDE.md setup notes and the setup playbook updated.
+Case study: Y. A sandbox that consumes a library from source inherits the library's bundler assumptions one import at a time; list them in the playbook as they appear.
