@@ -1,6 +1,8 @@
 <template>
-  <div class="flex flex-col gap-space-24">
-    <section class="flex flex-col gap-space-16 rounded-radius-6 bg-surface-container p-space-20 outline outline-1 -outline-offset-1 outline-border-subtle">
+  <!-- Overview: what this request is, how far along it is, and what still needs doing. Three typographic sections
+       separated by space and headings; no cards. -->
+  <div class="flex flex-col gap-space-32">
+    <section class="flex flex-col gap-space-16">
       <p class="m-0 font-label text-fontsize-16 leading-lineheight-24 text-text-default">
         <strong>{{ request.gc.name }}</strong> has asked {{ companyName }} to prequalify for <strong>{{ request.project }}</strong>.
         Complete the sections on the left and upload the documents each one asks for. You can save and come back at any time.
@@ -13,51 +15,42 @@
       </dl>
     </section>
 
-    <section class="rounded-radius-6 bg-surface-container p-space-20 outline outline-1 -outline-offset-1 outline-border-subtle">
+    <section class="border-t border-border-subtle pt-space-20">
       <ProgressBar activity-label="Application progress" :secondary-text="progressText" :progress="completion" :show-percent-indicator="true" />
     </section>
 
-    <section class="flex flex-col gap-space-12">
-      <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Needs your attention</h2>
-      <p v-if="!attention.length" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">Nothing outstanding. You can review and submit.</p>
-      <ul v-else class="m-0 flex list-none flex-col gap-space-4 p-0">
-        <li v-for="item in attention" :key="item.id" class="flex items-center gap-space-12 rounded-radius-4 bg-surface-container px-space-12 py-space-8 outline outline-1 -outline-offset-1 outline-border-subtle">
-          <StatusIndicator type="dot" :status="item.blocking ? 'cancelled' : 'standby'" aria-hidden="true" />
-          <div class="flex min-w-0 flex-1 flex-col font-label">
-            <span class="truncate text-fontsize-14 leading-lineheight-20 text-text-default">{{ item.label }}</span>
-            <span class="truncate text-fontsize-12 leading-lineheight-16 text-text-subtle">{{ item.reason }}</span>
-          </div>
-          <Button label="Open" color-scheme="primary" variant="text" size="small" @onClick="$emit('open', item.section)" />
-        </li>
-      </ul>
+    <section class="flex flex-col gap-space-24 border-t border-border-subtle pt-space-20">
+      <p v-if="!blocking.length && !flagged.length" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">Nothing outstanding. You can review and submit.</p>
+      <PortalItemList v-if="blocking.length" title="Needed before you can submit" :items="blocking" @open="$emit('open', $event.section)" />
+      <PortalItemList v-if="flagged.length" title="Flagged for the reviewer" hint="You can submit with these; fix them now if you can." :items="flagged" @open="$emit('open', $event.section)" />
     </section>
 
-    <InlineNotice tone="info" title="Background checks and outreach" :message="request.disclosure">
-      <template #actions>
-        <Checkbox :value="consent" label="I authorise Linarc to contact the references and insurance broker I list" size="small" @input="$emit('consent', $event)" />
-      </template>
-    </InlineNotice>
-
-    <div>
-      <Button label="Continue application" color-scheme="primary" variant="solid" size="medium" @onClick="$emit('continue')">
-        <template #rightIcon><ChevronRight /></template>
-      </Button>
-    </div>
+    <section class="flex flex-col gap-space-16 border-t border-border-subtle pt-space-20">
+      <InlineNotice tone="info" title="Background checks and outreach" :message="request.disclosure">
+        <template #actions>
+          <Checkbox :value="consent" label="I authorise Linarc to contact the references and insurance broker I list" size="small" @input="$emit('consent', $event)" />
+        </template>
+      </InlineNotice>
+      <div>
+        <Button label="Continue application" color-scheme="primary" variant="solid" size="medium" @onClick="$emit('continue')" />
+      </div>
+    </section>
   </div>
 </template>
 
 <script>
-import { ChevronRight } from '@development/linarc-icons';
 import Button from '@/components/Button/Button.vue';
 import Checkbox from '@/components/Checkbox/Checkbox.vue';
 import ProgressBar from '@/components/ProgressBar/ProgressBar.vue';
-import StatusIndicator from '@/componentsV2/StatusIndicator/StatusIndicator.vue';
 import InlineNotice from '~/candidates/InlineNotice/InlineNotice.vue';
+import PortalItemList from './PortalItemList.vue';
 import { currency } from '~/candidates/FormTableFields/format';
+
+const toSection = (i) => (i.kind === 'document' ? 'documents' : i.kind === 'field' ? i.id.split('.')[0] : i.id);
 
 export default {
   name: 'PortalOverview',
-  components: { Button, Checkbox, ProgressBar, StatusIndicator, InlineNotice, ChevronRight },
+  components: { Button, Checkbox, ProgressBar, InlineNotice, PortalItemList },
   props: {
     request: { type: Object, required: true },
     companyName: { type: String, required: true },
@@ -86,12 +79,11 @@ export default {
       const ok = required.filter((d) => ['passed', 'processing', 'needs-review'].includes(d.status)).length;
       return `${entered} of ${counted.length} sections entered · ${ok} of ${required.length} required documents accepted or in review`;
     },
-    attention() {
-      const toSection = (i) => (i.kind === 'document' ? 'documents' : i.kind === 'field' ? i.id.split('.')[0] : i.id);
-      return [
-        ...this.readiness.blocking.map((i) => ({ ...i, blocking: true, section: toSection(i) })),
-        ...this.readiness.flagged.map((i) => ({ ...i, blocking: false, section: toSection(i) })),
-      ];
+    blocking() {
+      return this.readiness.blocking.map((i) => ({ ...i, section: toSection(i) }));
+    },
+    flagged() {
+      return this.readiness.flagged.map((i) => ({ ...i, section: toSection(i) }));
     },
   },
 };

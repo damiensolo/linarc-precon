@@ -6,7 +6,10 @@ import fs from 'fs';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
 
-const [slug, outDir = '.screenshots', port = '5173', widthsArg = '1440,1024,390', heightArg = '900'] = process.argv.slice(2);
+// The slug may carry a hash (`prequal-portal#documents`) to capture a sub-route; the hash goes into the file name.
+const [slugArg, outDir = '.screenshots', port = '5173', widthsArg = '1440,1024,390', heightArg = '900'] = process.argv.slice(2);
+const [slug, hash = ''] = (slugArg || '').split('#');
+const fileStem = hash ? `${slug}-${hash}` : slug;
 if (!slug) {
   console.error('usage: yarn shot <slug> [out-dir] [port] [widths]');
   process.exit(1);
@@ -34,9 +37,9 @@ try {
         if (r.status() >= 400) errors.push(`http ${r.status()}: ${r.url().replace(/^https?:\/\/[^/]+/, '')}`);
       });
       await page.setViewport({ width, height: Number(heightArg) });
-      await page.goto(`http://localhost:${port}/?p=${slug}&theme=${theme}&chrome=0`, { waitUntil: 'networkidle0' });
+      await page.goto(`http://localhost:${port}/?p=${slug}&theme=${theme}&chrome=0${hash ? `#${hash}` : ''}`, { waitUntil: 'networkidle0' });
       await page.evaluate(() => document.fonts.ready);
-      const file = path.join(outDir, `${slug}-${width}-${theme}.png`);
+      const file = path.join(outDir, `${fileStem}-${width}-${theme}.png`);
       await page.screenshot({ path: file, fullPage: true });
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       console.log(file + (overflow > 0 ? `  ⚠ horizontal overflow ${overflow}px` : ''));

@@ -14,7 +14,7 @@ A grouped list of sections with a completion state per row, so an external user 
 - Figma V3.2 "☉ Navigation" page: module rails and tab bars; no grouped section list with states (verify at promotion).
 
 ## Anatomy
-Group label (label/xs bold uppercase, text/soft) → rows: StatusIndicator dot (completion state) · label (label/sm) · state text (label/xs, tone). Selected row: `surface/datatable/select-opaque` + `text/primary`.
+Revised 2026-10-09 (D-17): one signal per row. Group label (label/xs regular, `text/soft`) → rows: label (label/sm) · right-aligned state: a 16px Check (`icon/default`) for complete / submitted, the state word in `text/warning/low` for needs attention, the state word in `text/soft` for in progress / not started. No dots. Selected row: `surface/datatable/select-opaque` + `text/primary`.
 
 ## API
 | Prop | Type | Default | Notes |
@@ -26,7 +26,7 @@ Group label (label/xs bold uppercase, text/soft) → rows: StatusIndicator dot (
 Events: `select(id)`. `aria-current="page"` on the selected row; rows are buttons.
 
 ## Tokens
-`text/soft`, `text/default`, `text/primary/default`, `text/success`, `text/subtle`, `text/warning/low`, `surface/datatable/select-opaque`, `surface/subtle` (hover), `border/primary/focused` (focus outline), `radius-4`, `space-2/4/8/12/16`, StatusIndicator dot statuses complete / indeterminate / standby / disabled.
+`text/soft`, `text/default`, `text/primary/default`, `text/warning/low`, `icon/default`, `surface/datatable/select-opaque`, `surface/subtle` (hover), `border/primary/focused` (focus outline), `radius-4`, `space-2/4/8/12/20`.
 
 ## Behaviour
 Hidden under 768px; the page offers a SelectV2 with "Group › Section" options instead. Long labels truncate with a title attribute. Keyboard: tab through rows; focus ring is an outline (no size change).

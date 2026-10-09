@@ -30,3 +30,5 @@ Matrix scrolls horizontally under 640px. Numbers right-aligned, tabular. Repeat 
 - [ ] Figma: table-in-form pattern on the Forms page (header row, body rows, Add action), variables bound, both modes
 - [ ] Moved to `componentsV2/FormV2/fields/` and registered in `fieldRegistry.js`; stories; README; `.figma.js`
 - [ ] Verified in both themes at 1440 / 1024 / 390
+
+**Revised 2026-10-09 (hierarchy):** each table field is a subsection. The schema passes `props.title` (and `props.required`) and leaves `label` empty, so FieldRenderer draws no 13px label; the field draws its own 16px bold heading with the required mark, keeps `space-8` above and below, and the section grid gap is 24px, so neighbouring subsections sit ~40px apart. Row padding `space-10`. Asked for by the user on Experience & workforce and References ("too dense, hierarchy not used well").

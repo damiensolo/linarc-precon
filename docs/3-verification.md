@@ -5,7 +5,7 @@ Each check below has caught a real bug that the previous check missed. Run them 
 | # | Check | How | Catches | Found |
 |---|---|---|---|---|
 | 1 | Build passes | `yarn build` | Import errors, compile errors, missing files | — |
-| 2 | Renders in dev with no console errors or failed requests | `yarn dev`, then `yarn shot <slug> <out> 5173 <widths> <frame height>` (exits 1 on errors; logs failing URLs; hides sandbox chrome) | Dev-only crashes the build hides, SCSS/import failures | F-003, F-015, F-019 |
+| 2 | Renders in dev with no console errors or failed requests | `yarn dev`, then `yarn shot <slug>[#hash] <out> 5173 <widths> <frame height>` (exits 1 on errors; logs failing URLs; hides sandbox chrome; `#hash` captures a sub-route such as a portal section) | Dev-only crashes the build hides, SCSS/import failures | F-003, F-015, F-019 |
 | 3 | Both themes | `yarn shot` captures light and dark | Hard-coded colours, tokens missing in one mode | F-004 |
 | 4 | Exact viewports | `yarn shot` at 1440, 1024 and 390 (exact, full page, overflow warning) | Broken reflow, horizontal overflow, clipped controls | F-010 |
 | 5 | Visual match | Compare the screenshot at the Figma frame width with `get_screenshot` | Layout, spacing and hierarchy differences | — |
@@ -44,3 +44,5 @@ Interactive components must not change size or position between states. For each
 ## If the browser won't launch
 
 `Failed to launch the browser process: Code: 0` with an empty stderr means the browser itself exited at once, not that puppeteer is misconfigured. Seen with Edge while an update was pending (two version folders under `Program Files (x86)/Microsoft/Edge/Application`; F-035). Either restart Edge once to let it finish updating, or point the script at another Chromium: `EDGE_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" yarn shot <slug> …`.
+
+**New files and responsive classes (F-041).** If a responsive class (`sm:…`, `md:…`) used only by a file created after `yarn dev` started has no effect in screenshots but works in `yarn build`, the dev server's Tailwind output is stale. `touch src/style.css`, wait for `/src/style.css` to answer (about a minute), then re-shoot.

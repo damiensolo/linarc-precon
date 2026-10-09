@@ -3,7 +3,10 @@
        External user: the Linarc top nav in a reduced configuration (no module switcher, no tools, no project
        context, account rail with help / notifications / profile only) and no side rail (2026-10-09). The title bar
        carries the request, progress, save state and Submit; the section nav sits in the left panel; the selected
-       section (overview, a FormV2 form, the Documents list or Review & submit) in the content area. -->
+       section (overview, a FormV2 form, the Documents list or Review & submit) in the content area; Previous /
+       Save and exit / Next in a fixed bottom panel so the way forward is always on screen.
+       Visual rules (2026-10-09 restyle, docs/prototypes/prequal-portal.md "Visual hierarchy"): one container level,
+       hairlines not boxes, colour only on the primary action and on states that ask for action, label-only buttons. -->
   <div class="flex h-full flex-col bg-surface-page">
     <!-- Figma: Top Nav Bar Module=Company, whose module cell is the Linarc logomark (Module Icon / Logo Swap, Type=Logo,
          82×72 with the 48px Branding / Logomark), with the Company tools, Bookmarks / Create and project context removed. -->
@@ -31,11 +34,17 @@
       :left-panel-resizable="false"
       :left-panel-default-width="288"
       :right-panel-enabled="false"
+      :bottom-panel-enabled="true"
+      :bottom-panel-visible="true"
+      :bottom-panel-resizable="false"
+      :bottom-panel-default-height="64"
+      :bottom-panel-min-height="64"
+      :no-bottom-padding="true"
       :scrollable-content="true"
       :persist-preferences="false"
     >
       <template #left-panel>
-        <div class="h-full overflow-auto p-space-12">
+        <div class="h-full overflow-auto px-space-12 pb-space-12 pt-space-16">
           <PortalSectionNav :groups="navGroups" :selected="current" @select="goTo" />
         </div>
       </template>
@@ -53,22 +62,22 @@
           <span aria-hidden="true">·</span>
           <span>{{ saveText }}</span>
         </span>
-        <Button label="Submit" color-scheme="primary" variant="solid" size="medium" :is-disabled="!ready.canSubmit || submitted" @onClick="submit">
-          <template #leftIcon><Send /></template>
-        </Button>
+        <Button label="Submit" color-scheme="primary" variant="solid" size="medium" :is-disabled="!ready.canSubmit || submitted" @onClick="submit" />
       </template>
 
       <template #content>
-        <div class="flex w-full flex-col gap-space-24">
+        <!-- pt-space-16 on top of the layout's own padding: the section title needs room below the title-bar rule. -->
+        <div class="flex w-full flex-col gap-space-24 pt-space-16">
           <SelectV2 v-if="isNarrow" label="Section" :options="flatOptions" :value="current" @input="goTo" @change="goTo" />
 
-          <div class="flex flex-wrap items-center justify-between gap-space-8">
-            <h1 class="m-0 font-heading text-fontsize-20 font-bold leading-lineheight-28 text-text-default">{{ currentTitle }}</h1>
-            <StatusChip v-if="currentState" :label="currentState.label" :status="toneToChipStatus(currentState.tone)" fill-style="outline" type="default" :removable="false" />
+          <div class="flex flex-col gap-space-4">
+            <div class="flex flex-wrap items-baseline justify-between gap-space-8">
+              <h1 class="m-0 font-heading text-fontsize-20 font-bold leading-lineheight-28 text-text-default">{{ currentTitle }}</h1>
+              <span v-if="currentState" class="font-label text-fontsize-14 leading-lineheight-20" :class="currentState.tone === 'warning' ? 'text-text-warning-low' : 'text-text-subtle'">{{ currentState.label }}</span>
+            </div>
+            <p v-if="currentSection && currentSection.conditional" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ currentSection.conditional }}</p>
+            <p v-if="currentSection && currentSection.note" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ currentSection.note }}</p>
           </div>
-
-          <p v-if="currentSection && currentSection.conditional" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ currentSection.conditional }}</p>
-          <p v-if="currentSection && currentSection.note" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ currentSection.note }}</p>
 
           <PortalOverview
             v-if="current === 'overview'"
@@ -85,24 +94,23 @@
           />
           <PortalDocuments v-else-if="current === 'documents'" :documents="documents" />
           <PortalReview v-else-if="current === 'review'" :readiness="ready" :submitted="submitted" :gc-name="request.gc.name" @open="goTo" @submit="submit" />
-          <FormV2 v-else :key="current" v-model="values[current]" :schema="schemas[current]" :field-types="portalFieldTypes" mode="manual" label-position="top" @submit="onSave">
+          <FormV2 v-else :key="current" v-model="values[current]" :schema="schemas[current]" :field-types="portalFieldTypes" :flat="true" mode="manual" label-position="top" @submit="onSave">
             <template #footer>
               <span />
             </template>
           </FormV2>
-
-          <footer class="flex flex-wrap items-center justify-between gap-space-12 border-t border-border-subtle pt-space-16">
-            <Button label="Previous" color-scheme="secondary" variant="outline" size="medium" :is-disabled="!prevId" @onClick="goTo(prevId)">
-              <template #leftIcon><ChevronLeft /></template>
-            </Button>
-            <div class="flex items-center gap-space-12">
-              <Button label="Save and exit" color-scheme="secondary" variant="minimal" size="medium" @onClick="onSave" />
-              <Button :label="nextId ? 'Next' : 'Review and submit'" color-scheme="primary" variant="solid" size="medium" @onClick="goTo(nextId || 'review')">
-                <template #rightIcon><ChevronRight /></template>
-              </Button>
-            </div>
-          </footer>
         </div>
+      </template>
+
+      <!-- Sticky footer: always visible under the content, never under the section nav. -->
+      <template #bottom-panel>
+        <footer class="flex h-full items-center justify-between gap-space-12 px-space-20">
+          <Button label="Previous" color-scheme="secondary" variant="outline" size="medium" :is-disabled="!prevId" @onClick="goTo(prevId)" />
+          <div class="flex items-center gap-space-12">
+            <Button label="Save and exit" color-scheme="secondary" variant="minimal" size="medium" @onClick="onSave" />
+            <Button :label="nextId ? 'Next' : 'Review and submit'" color-scheme="primary" variant="solid" size="medium" @onClick="goTo(nextId || 'review')" />
+          </div>
+        </footer>
       </template>
     </AppLayout>
   </div>
@@ -110,12 +118,11 @@
 
 <script>
 // LinarcLogoDark: the stacked Linarc mark with the white wordmark, for dark surfaces (Figma Branding / Logomark Mode=Dark).
-import { Send, ChevronLeft, ChevronRight, LinarcLogoDark } from '@development/linarc-icons';
+import { LinarcLogoDark } from '@development/linarc-icons';
 import TopNavBar from '@/components/TopNavBar/index.vue';
 import AppLayout from '@/componentsV2/AppLayout/AppLayout.vue';
 import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
-import StatusChip from '@/components/StatusChip/StatusChip.vue';
 import Button from '@/components/Button/Button.vue';
 import PortalSectionNav from '~/candidates/PortalSectionNav/PortalSectionNav.vue';
 import PortalOverview from './components/PortalOverview.vue';
@@ -123,7 +130,7 @@ import PortalDocuments from './components/PortalDocuments.vue';
 import PortalReview from './components/PortalReview.vue';
 import { portalRequest, pillars, sections, documents, readiness, completion } from '~/modules/prequal/data/portal';
 import { companyById, requestById } from '~/modules/prequal/data';
-import { SECTION, toneToChipStatus } from '~/modules/prequal/status';
+import { SECTION } from '~/modules/prequal/status';
 import { portalFieldTypes, sectionSchema, sectionValues } from '~/modules/prequal/portalFields';
 import { currentRoute } from '~/modules/prequal/router';
 
@@ -135,7 +142,7 @@ export default {
     title: 'Prequalification › Subcontractor portal',
     figma: '',
   },
-  components: { TopNavBar, AppLayout, FormV2, SelectV2, StatusChip, Button, PortalSectionNav, PortalOverview, PortalDocuments, PortalReview, Send, ChevronLeft, ChevronRight, LinarcLogoDark },
+  components: { TopNavBar, AppLayout, FormV2, SelectV2, Button, PortalSectionNav, PortalOverview, PortalDocuments, PortalReview, LinarcLogoDark },
   data() {
     const route = currentRoute();
     const known = ['overview', ...sections.map((s) => s.id)];
@@ -206,7 +213,6 @@ export default {
     if (this.mq) this.mq.removeEventListener('change', this.onMq);
   },
   methods: {
-    toneToChipStatus,
     goTo(id) {
       if (!id || id === this.current) return;
       this.current = id;

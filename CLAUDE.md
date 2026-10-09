@@ -10,7 +10,7 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 
 - `yarn dev` → http://localhost:5173 (`?p=<slug>` picks a prototype, `?theme=dark|light` forces a theme)
 - `yarn build` → production build (catches import/compile errors)
-- `yarn shot <slug> [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core; the dev server must be running. Write output to the scratchpad, not the repo.
+- `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core; the dev server must be running. Write output to the scratchpad, not the repo.
 
 ## Rules
 

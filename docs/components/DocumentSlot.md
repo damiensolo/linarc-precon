@@ -15,7 +15,7 @@ One required document end to end: what the GC needs before upload, the upload zo
 - Figma V3.2: Drop Area exists; no document-slot composition (verify at promotion).
 
 ## Anatomy
-Card (surface/container, 1px outline in the status tone, radius-6, padding 16) → header: label + "Required / Optional / Required for this site · Expiry: driver" + StatusChip → requirements list (hidden in compact mode once a file exists) → DropArea (no file / rejected / processing) **or** file row(s) (FileCheck icon, name, "Uploaded d MMM") + message line (tone icon + text) + extracted-details grid → footer: Replace file · View extracted details.
+No card (revised 2026-10-09, D-17). Full: a block the parent list separates with hairlines (`border/subtle`). Compact (under a form field): no rule or box; vertical space (`space-4` above, `space-12` below) separates it from the next field (user direction 2026-10-09: whitespace, not lines). Header: label + "Required / Optional / Required for this site · Expiry: driver" + status (StatusChip only for rejected / failed, otherwise the status word in `text/subtle`) → requirements list (hidden in compact mode once a file exists) → DropArea without the browse-button icon (no file / rejected / processing) **or** file row(s) (File icon in `icon/subtle`, name, "Uploaded d MMM") + message line (text only; `text/error` or `text/warning/low` for those tones, `text/subtle` otherwise) + extracted-details grid (indented by space only) → footer: Replace file · View extracted details as text buttons.
 
 ## API
 | Prop | Type | Default | Notes |
@@ -26,10 +26,10 @@ Card (surface/container, 1px outline in the status tone, radius-6, padding 16) �
 Events (to add when wired): `upload(file)`, `replace`.
 
 ## Tokens
-`surface/container`, `surface/subtle` (file row), `border/subtle`, `border/error/default`, `border/warning/low`, `text/default`, `text/subtle`, `text/soft`, `text/success`, `text/error/default`, `text/warning/low`, `icon/default`, `radius-4/6`, `space-2/8/12/16/20`; StatusChip statuses via `toneToChipStatus` (failed → `warning-medium`? no: error; see status-model §5).
+`border/subtle`, `text/default`, `text/subtle`, `text/soft`, `text/error/default`, `text/warning/low`, `icon/subtle`, `space-2/8/12/16/20`; StatusChip statuses via `toneToChipStatus` for rejected (error) and failed (error, strong).
 
 ## Behaviour
-Status → DropArea state: none → default, rejected → error with the message, processing → uploading (progress), everything else → file row. The outline follows the tone so a failed slot stands out in a long list. Restricted documents (financial statements) carry `restricted: true` for the GC-side read-only variant.
+Status → DropArea state: none → default, rejected → error with the message, processing → uploading (progress), everything else → file row. A failed or rejected slot stands out in a long list by its chip and its red message; accepted slots carry no colour. Restricted documents (financial statements) carry `restricted: true` for the GC-side read-only variant.
 
 ## Open questions for design
 - Does a failed-but-uploaded document show the DropArea again (replace by drop) or only the Replace button? (Prototype: button only.)

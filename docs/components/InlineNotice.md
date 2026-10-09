@@ -15,7 +15,7 @@ A notice that sits in the page flow, under a field or above a section: tone + ic
 - Figma V3.2: Banners page exists ("☉ Banners"); check whether a banner component covers the in-page case before promotion. If it does, this becomes an extension of Banner, not a new component.
 
 ## Anatomy
-Box (tone surface subtle, 1px tone outline, radius-4, padding 12/8) → tone icon (16px) → title (bold, tone text) → message (text/default) → actions row.
+Revised 2026-10-09 (D-17). **Warning / error:** tinted box (`surface/<tone>/subtle`, radius-4, padding 12/8, no outline) → tone icon (16px) → title (bold, `text/default`) → message (`text/default`) → actions row. **Info / success:** no box and no icon: title (bold, `text/default`) → message (`text/subtle`) → actions row. The two boxed tones are the ones that ask the user to act; the fill is the signal and the icon keeps it readable without colour.
 
 ## API
 | Prop | Type | Default | Notes |
@@ -27,7 +27,7 @@ Box (tone surface subtle, 1px tone outline, radius-4, padding 12/8) → tone ico
 Slots: `default` (message), `actions`. Role: `alert` for warning/error, `status` otherwise.
 
 ## Tokens
-`surface/<tone>/subtle`, `border/<tone>`, `icon/<tone>`, `text/<tone>`, `text/default`, `radius-4`, `space-8`, `space-12`. Warning uses the `warning-low` set.
+`surface/warning/low/subtle`, `surface/error/subtle`, `icon/warning/low`, `icon/error`, `text/default`, `text/subtle`, `radius-4`, `space-8`, `space-12`.
 
 ## Open questions for design
 - Banner vs inline notice: one component with a `placement` axis, or two?

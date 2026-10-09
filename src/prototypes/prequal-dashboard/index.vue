@@ -9,9 +9,7 @@
         <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-subtle">View as</span>
         <SegmentedControl v-model="role" :options="roleOptions" aria-label="View as" size="md" />
       </span>
-      <Button label="New request" color-scheme="primary" variant="solid" size="medium" @onClick="newRequest">
-        <template #leftIcon><Plus /></template>
-      </Button>
+      <Button label="New request" color-scheme="primary" variant="solid" size="medium" @onClick="newRequest" />
     </template>
 
     <template #content>
@@ -54,7 +52,7 @@
 <script>
 // Clock (not Hourglass) for "Waiting": the ☉ Icons set in Figma has clock, clipboard-check and calendar-clock masters
 // but no hourglass, and the icon must exist on both sides.
-import { Plus, Clock, ClipboardCheck, CalendarClock } from '@development/linarc-icons';
+import { Clock, ClipboardCheck, CalendarClock } from '@development/linarc-icons';
 import Button from '@/components/Button/Button.vue';
 import DataGrid from '@/components/DataGrid/index.vue';
 import SegmentedControl from '@/componentsV2/SegmentedControl/SegmentedControl.vue';
@@ -70,7 +68,7 @@ export default {
     title: 'Preconstruction › Prequalification › Overview',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3729-4281',
   },
-  components: { PrequalShell, Button, DataGrid, SegmentedControl, KpiCard, Plus },
+  components: { PrequalShell, Button, DataGrid, SegmentedControl, KpiCard },
   data() {
     return {
       role: 'reviewer',

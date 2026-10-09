@@ -309,3 +309,60 @@ Why it mattered: each one blocked the whole page; none is visible from the compo
 How it was caught: `yarn build` for (2) and (3); `yarn shot` page errors for (1) and (4).
 What changed: `src/main.js` installs Vuelidate; `vite.config.mjs` adds `.vue` to `resolve.extensions` and aliases `clamp` to `src/shims/clamp.js`; TextEditorV2's import fixed in the library (P-018). CLAUDE.md setup notes and the setup playbook updated.
 Case study: Y. A sandbox that consumes a library from source inherits the library's bundler assumptions one import at a time; list them in the playbook as they appear.
+
+## F-037 · 2026-10-09 · The DropArea glyph didn't match Figma, and the audit couldn't have caught it
+Tags: figma, design-system
+What happened: the user saw the upload glyph in the portal as "too thick and dark". Figma's Drop Area (27222:30173) draws `file-up` at 36×36 with a 2px stroke in `border/default` in both sizes; the library rendered it at 56px (small) / 64px (large) with lucide's `stroke-width="2"`, which is in viewBox units and scales with the icon (4.7px / 5.3px rendered), in `icon/secondary` (slate). The component description in Figma even lists "border/default (icon glyph)".
+Why it mattered: an icon that is 2.3× too heavy changes the weight of every form section that has a document slot; a variable audit (P-017) compares colours, not glyph geometry, so this class of mismatch only shows up when someone looks.
+How it was caught: by eye, in design review. Confirmed with `use_figma` reading the vector `strokeWeight` and bound variables of the variant.
+What changed: library DropArea: 36px in both sizes, `absolute-stroke-width` on the state icon so `iconStrokeWidth` is in pixels, default colour `text-border-default` (P-020). Flagged, not changed: the `sm` variant's browse button is Button `lg` in Figma and `medium` in code.
+Case study: Y. Lucide stroke widths scale with the rendered size; any Figma-to-code icon check needs the rendered stroke, not the attribute. A Figma component description that names the token for a sub-part ("icon glyph") is the fastest way to find the intended binding.
+
+## F-038 · 2026-10-09 · Composing candidates inside library cards nested containers three deep
+Tags: design-system, ai-workflow
+What happened: the first portal build put a card around every unit: FormSection's own card (library default), a DocumentSlot card inside it, a tinted file row inside that, a boxed InlineNotice next to it, and boxed rows with coloured dots in every list. Each piece was reasonable alone; together the screen was mostly lines. Status was shown three ways at once (dot, coloured word, chip).
+Why it mattered: the user's review: too many containers, borders and strokes, colour and icons competing with what the subcontractor needs to act on. The Overview, which had fewer nested boxes, read better; the forms, which had the most, read worst.
+How it was caught: design review by the user; then a Mobbin pass (Linear, Mercury, Airwallex, Remote, ElevenLabs, Revolut Business) to name what the good examples do differently: one container level, hairlines not boxes, colour only where the user must act, one signal per status, label-only buttons, a fixed footer.
+What changed: rules recorded as D-17; candidates restyled (PortalSectionNav, DocumentSlot, InlineNotice) and their proposal docs updated; a `flat` prop on FormV2 (P-021) so a form that is the page doesn't bring its own card; AppLayout bottom panel used as the sticky footer; `+` / Send / chevron icons removed from buttons; `yarn shot` accepts `slug#hash` so portal sections can be captured without a throwaway script.
+Case study: Y. Library components default to being self-contained cards; a screen composed of several of them needs a layout rule that says which one owns the container, or every level draws its own.
+
+## F-039 · 2026-10-09 · The Scope multiselect wasn't the design system: FormV2 ships its own chip select
+Tags: design-system, figma
+What happened: the user flagged the Scope section's multi-value fields as "not our design system". They are FormV2's built-in `multiselect` field type: `SelectField.vue` renders SelectV2 for single values but a hand-rolled trigger, chips and menu for multi, with its own sizes in rem (2rem trigger, 0.375rem radius, 9999px pill chips at 0.75rem, a typed `×`), V1 `Icon` with palette colours, the placeholder in `text/on-surface/default-inverse` and a menu shadow coloured with `--text-soft`. Figma has no multi-select at all (`Select Menu` is single-value; `Chip` exists but nothing composes it), and SelectV2's `isMultiselect` is documented as visual only.
+Why it mattered: a lookalike inside the library passes every "use library components" check and still looks foreign. The same audit found FormV2's field chrome (label 13px/600, help 12px, 6px gaps, 15px section title) written in rem with no token behind it, and `FileField` using V1 icons.
+How it was caught: the user's eye; confirmed by reading `SelectField.vue`, `SelectV2.vue` (`isMultiselect` doc) and `search_design_system` for select / chip components.
+What changed: proposal `docs/components/MultiSelect.md` (candidate: SelectV2 trigger + Chip + Checkbox rows; Figma `Multi` variant of Select Menu or a new component); backlog row; the deviations listed in `docs/prototypes/prequal-portal.md` › "Design-system deviations" with the suggested P-rows. No code change yet: the portal keeps FormV2's field until the candidate exists.
+Case study: Y. "Uses library components" is necessary, not sufficient: check that the component itself has a Figma counterpart, or it is a lookalike one level down.
+Resolved: 2026-10-09, Figma Select Menu `Type=Tags` (P-023) and SelectV2 `multiple` (P-024); FormV2 `multiselect` renders it; Scope uses the result.
+
+## F-040 · 2026-10-09 · Tag's close icon was 24px in Figma, 16px in code
+Tags: figma, design-system
+What happened: the user flagged the Tag close × as too large. In Figma all 9 variants used the 24×24 `x 1-24px` instance at its native size, unbound, including the 20px-tall sm tag, where it overflowed the container. Code (Tag.vue) already rendered lucide `X` at 16px with a 1.5px absolute stroke, the same as Chip's icons in both Figma and code. The Tag documentation frame never stated an icon size, so nothing contradicted the 24.
+Why it mattered: Dev Mode and anyone measuring Figma would build tags 8px wider than production, and the sm tag looked broken in designs.
+How it was caught: the user's eye; confirmed by a scripted read of every variant's icon instance (size, bindings, stroke).
+What changed: P-022. Figma: icon 16×16 bound to `spacing/space-16` in all variants (glyph 8×8, stroke 1.5, unchanged); documentation updated (anatomy legend, a `spacing/space-16` token row, component description). Code: spec comment only. Readiness checklist: the stroke-scaling rule was narrowed, because the 16px glyphs in Chip and Tag keep 1.5px.
+Case study: N
+
+## F-040 · 2026-10-09 · A Figma frame created by the API carries a white fill; it only showed in Disabled and Dark
+Tags: figma, tooling
+What happened: extending Select Menu with `Type=Tags` (P-023), the tags row was made with `figma.createAutoLayout`, which, like `createFrame`, gives the frame an opaque white fill. On the Default and Focused variants it was invisible (white on white). On the Disabled variants it showed as a white block inside the grey field, and in a Dark-mode check it hid the tags completely, which first looked like a Tag dark-token defect.
+Why it mattered: the published component would have shipped with a white block in two of six variants and in every dark screen; the light Default screenshot, which is the one usually taken, passes.
+How it was caught: a temporary explicit-mode frame (Light + Dark side by side) with the variant and three Tag styles for comparison, then reading every fill layer with its resolved colour: the Tag tokens resolved correctly (text 250, fill white at 5%), so the block had to be a parent frame.
+What changed: fills cleared on the six Tags rows; the check frame deleted after the screenshot. Rule for `use_figma` scripts: clear `fills` on every container frame you create inside a component, and screenshot a Disabled variant and a Dark instance before calling a component done.
+Case study: Y. Verify in the state and the mode where the background is not white.
+
+## F-041 · 2026-10-09 · The sandbox's own picker broke the "no lookalikes" rule; Edge stopped launching
+Tags: design-system, tooling
+What happened: (1) The prototype picker in `src/App.vue` was a native `<select>` styled with token classes. It looked off next to real components (OS chevron, native popup), and the user flagged it. It is now the library's `SelectV2` (small, searchable, `{ label, value }` options). (2) While verifying, puppeteer-core could no longer launch Edge ("Failed to launch the browser process", empty stderr), with or without the sandbox, `--no-sandbox` or a fresh profile. Edge 153 and 154 are installed side by side, which suggests an update waiting for a restart.
+Why it mattered: (1) the chrome is the first thing every reviewer sees, and the rules apply to it too. (2) With no browser there's no `yarn shot`, so every visual check falls back to `yarn build`, which catches compile errors only.
+How it was caught: (1) the user's screenshot; (2) every `yarn shot` and one-off puppeteer run since 2026-10-08.
+What changed: App.vue uses SelectV2. Edge is unresolved; restart Edge (or Windows) to finish the update, or set `EDGE_PATH` to another Chromium browser.
+Case study: N
+
+## F-041 · 2026-10-09 · The dev server's Tailwind missed classes that only new files use
+Tags: tooling
+What happened: the wizard's `sm:flex-row`, `sm:basis-1/3` and `sm:gap-space-16` worked in `yarn build` but not on the long-running dev server: the rows stayed stacked at 1440. `getComputedStyle` showed `flex-direction: column`; the production CSS had the rules inside `@media (width>=640px)` after `flex-col`. The dev server's stylesheet had been generated before the new folder `src/prototypes/prequal-wizard/` existed and hadn't been re-processed, and with the catch-all safelist (D-04) only base utilities are guaranteed, not responsive variants.
+Why it mattered: a layout that looks wrong in screenshots but is right in the build sends you after a CSS bug that isn't there.
+How it was caught: screenshots at 1440 showed mobile layout; a probe compared the dev server's computed style with the build's CSS.
+What changed: `touch src/style.css` makes Vite re-run PostCSS / Tailwind (about a minute with the 8 MB stylesheet; the first `yarn shot` right after can time out). Added to `docs/3-verification.md`.
+Case study: N.

@@ -19,7 +19,7 @@
 - [ ] Fills and strokes bound to semantic colour variables (`surface/*`, `text/*`, `border/*`, `icon/*`), not primitives or hex.
 - [ ] Text uses text styles built from typography variables.
 - [ ] Every variant consistent on the axes that should match (icon size per size, stroke per icon size, padding per size). **Audit with a script, not by eye** (F-009).
-- [ ] Icon sizes bound to variables, with stroke scaled to the icon (1.5px × size/24 on this system).
+- [ ] Icon sizes bound to variables, sized to the component (no 24px icon instance left at its native size inside a 16px slot, F-040). Stroke: Icon Button scales it (1.5px × size/24); Chip and Tag keep 1.5px at 16px (`absolute-stroke-width` in code). Match the sibling component.
 - [ ] Variant property names and values match the code's vocabulary, or the Code Connect file maps them.
 - [ ] A Code Connect file exists **and is published** (`yarn figma:publish`). Unpublished mappings are invisible to the agent (F-014).
 - [ ] No unbound or off-scale type sizes, such as an italic 11px label (F-018).

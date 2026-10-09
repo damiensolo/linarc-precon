@@ -5,18 +5,18 @@
       v-if="showChrome"
       class="flex flex-wrap items-center justify-between gap-space-8 px-space-16 sm:px-space-24 py-space-12 border-b border-border-default bg-surface-container"
     >
-      <div class="flex flex-wrap items-center gap-space-12 min-w-0">
+      <div class="flex flex-1 flex-wrap items-center gap-space-12 min-w-0">
         <span class="font-heading text-fontsize-14 leading-lineheight-20 font-bold text-text-default">
           Linarc Prototypes
         </span>
-        <select
+        <SelectV2
           v-model="currentSlug"
-          class="font-label text-fontsize-14 leading-lineheight-20 px-space-8 py-space-4 rounded-radius-4 border border-border-default bg-surface-container text-text-default"
-        >
-          <option v-for="p in prototypes" :key="p.slug" :value="p.slug">
-            {{ p.title }}
-          </option>
-        </select>
+          class="w-full sm:w-1/2 lg:w-1/3"
+          size="small"
+          placeholder="Choose a prototype"
+          :options="prototypeOptions"
+          :visible-item-count="8"
+        />
         <a
           v-if="current && current.figma"
           :href="current.figma"
@@ -45,6 +45,7 @@
 
 <script>
 import Button from '@/components/Button/Button.vue';
+import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
 import prototypes from '~/prototypes';
 
 const THEME_KEY = 'linarc-prototypes:theme';
@@ -57,6 +58,7 @@ export default {
   name: 'App',
   components: {
     Button,
+    SelectV2,
   },
   data() {
     const slug = readQuerySlug();
@@ -70,6 +72,9 @@ export default {
     };
   },
   computed: {
+    prototypeOptions() {
+      return this.prototypes.map((p) => ({ label: p.title, value: p.slug }));
+    },
     current() {
       return this.prototypes.find((p) => p.slug === this.currentSlug);
     },
