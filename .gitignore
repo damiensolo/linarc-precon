@@ -22,3 +22,8 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Documentation
+/docs/case-study/
+/docs/prd/
+/docs/prequal/

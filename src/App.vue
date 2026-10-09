@@ -60,7 +60,7 @@ export default {
   },
   data() {
     const slug = readQuerySlug();
-    const fallback = (prototypes.find((p) => p.slug !== '_blank') || prototypes[0] || {}).slug;
+    const fallback = (prototypes[0] || {}).slug;
     return {
       prototypes,
       currentSlug: prototypes.some((p) => p.slug === slug) ? slug : fallback,

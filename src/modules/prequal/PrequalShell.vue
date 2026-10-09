@@ -1,0 +1,106 @@
+<template>
+  <!-- Shared shell for GC-side Prequalification screens (D-13): Preconstruction top nav (Bookmarks hidden),
+       Side Nav Preconstruction rail for the selected tool, AppLayout for the page. Figma: Top Nav Bar
+       Module=Preconstruction (40024068:91824), Side Nav Preconstruction (40024068:92254), Title Bar / Page. -->
+  <div class="flex flex-col h-full bg-surface-page">
+    <TopNavBar
+      :module="{ label: 'Precon', ariaLabel: 'Preconstruction', icon: PreconstructionModuleIcon, showChevron: true }"
+      :tools="{ items: tools, needBookmarks: false, needCreate: true, isAdmin: false, selectedColor: 'var(--text-accent-teal)' }"
+      :context="{
+        enabled: true,
+        primaryLabel: 'Northern Heights',
+        primaryOptions: projects,
+        primarySelectedValue: 'northern-heights',
+        secondaryOptions: places,
+      }"
+      :account="{
+        enabled: true,
+        show: { announcement: true, message: true, chatSupport: true, help: true, notifications: true, profile: true },
+      }"
+      :user-details="{ name: 'Alex Morgan', email: 'alex@example.com' }"
+      @tool-click="onTool"
+    />
+
+    <div class="flex flex-1 min-h-0">
+      <SideNavV2
+        class="hidden md:flex h-full shrink-0"
+        :aria-label="currentTool.label"
+        :module-list="rail"
+        :selected-id="selectedNav"
+        @click="onNav"
+      />
+
+      <AppLayout
+        class="flex-1 min-w-0"
+        :left-panel-enabled="false"
+        :right-panel-enabled="rightPanel"
+        :scrollable-content="scrollableContent"
+        :persist-preferences="false"
+      >
+        <template #header>
+          <span class="font-label font-bold text-fontsize-16 leading-lineheight-24 text-text-default">{{ title }}</span>
+        </template>
+        <template #header-actions>
+          <slot name="header-actions" />
+        </template>
+        <template #content>
+          <slot name="content" />
+        </template>
+        <template v-if="rightPanel" #right-panel>
+          <slot name="right-panel" />
+        </template>
+      </AppLayout>
+    </div>
+  </div>
+</template>
+
+<script>
+// PROTOTYPE-CHANGE P-014: library-local until it moves into @development/linarc-icons.
+import PreconstructionModuleIcon from '@/components/TopNavBar/ModuleIcon/PreconstructionModuleIcon.js';
+import TopNavBar from '@/components/TopNavBar/index.vue';
+import SideNavV2 from '@/componentsV2/SideNavV2/SideNavV2.vue';
+import AppLayout from '@/componentsV2/AppLayout/AppLayout.vue';
+import { preconTools, preconRails, projects, places } from './nav';
+import { go, isBuilt } from './router';
+
+export default {
+  name: 'PrequalShell',
+  components: { TopNavBar, SideNavV2, AppLayout },
+  props: {
+    /** Screen name from router.js (dashboard, requests, review, record …); selects the rail item. */
+    screen: { type: String, required: true },
+    /** Page title shown in the title bar. */
+    title: { type: String, required: true },
+    rightPanel: { type: Boolean, default: false },
+    scrollableContent: { type: Boolean, default: false },
+  },
+  data() {
+    return { PreconstructionModuleIcon, projects, places, selectedTool: 'prequalification' };
+  },
+  computed: {
+    tools() {
+      return preconTools.map((t) => ({ ...t, isSelected: t.id === this.selectedTool }));
+    },
+    currentTool() {
+      return preconTools.find((t) => t.id === this.selectedTool);
+    },
+    rail() {
+      return preconRails[this.selectedTool];
+    },
+    selectedNav() {
+      const item = this.rail.find((i) => i.screen === this.screen);
+      return item ? item.id : this.rail[0].id;
+    },
+  },
+  methods: {
+    onTool({ id }) {
+      if (preconRails[id]) this.selectedTool = id;
+    },
+    onNav({ id }) {
+      const item = this.rail.find((i) => i.id === id);
+      // Only screens that exist as prototypes navigate; the rest are inert until built.
+      if (item && item.screen && item.screen !== this.screen && isBuilt(item.screen)) go(item.screen);
+    },
+  },
+};
+</script>

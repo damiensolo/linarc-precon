@@ -2,7 +2,7 @@
 
 Sandbox for building **view prototypes** from Figma using the Linarc design system. It consumes the sibling `../linarc-design-components` **from source** through Vite aliases.
 
-**Building from a Figma URL?** Follow the `figma-to-prototype` skill (`.claude/skills/figma-to-prototype/SKILL.md`). This file holds the always-on rules and reference.
+**Building from a Figma URL?** Follow the `figma-to-prototype` skill (`.claude/skills/figma-to-prototype/SKILL.md`). **Building a module screen from the written spec (Prequalification)?** Follow `prd-to-prototype` (`.claude/skills/prd-to-prototype/SKILL.md`); it reads `docs/prequal/` and ends by pushing an editable reference to Figma. This file holds the always-on rules and reference.
 
 **Documenting the process is part of the work.** `docs/` holds the setup playbook, Figma readiness checklist, verification steps, decisions, findings log, per-prototype records and two case studies (internal and public); see `docs/README.md`. When any setup problem, workaround or surprise comes up, add a `docs/findings-log.md` entry right away, not at the end.
 
@@ -22,7 +22,8 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 - **Imports:** `import Button from '@/components/Button/Button.vue'`; icons are `import { Search } from '@development/linarc-icons'` (lucide-vue re-exports plus Linarc module icons), rendered in Button `#leftIcon` / `#rightIcon` slots. `@` = library `src`, `~` = this repo's `src`. Don't write `import { X } from '@development/linarc-design-components'`: `build.js` has only a default export.
 - **Check both themes.** Theme is the `.dark` class on `<html>`.
 - **Patterns and copy come from Figma.** The Figma references define interaction patterns (modal vs drawer vs panel, toasts, tables, states) and writing conventions. If it's unclear which pattern applies, stop and ask; don't guess.
-- **Mock data** lives in `src/prototypes/<slug>/data.js`. Make it plausible for construction project management, and mark it `// PLACEHOLDER DATA` until it's been verified.
+- **Mock data** lives in `src/prototypes/<slug>/data.js`; screens of one module share it in `src/modules/<module>/data/` so a row on one screen leads to the same entity on the next. Make it plausible for construction project management, and mark it `// PLACEHOLDER DATA` until it's been verified.
+- **Status is never a string literal in a template.** Labels and tones come from the module's status vocabulary (`src/modules/prequal/status.js`, documented in `docs/prequal/status-model.md`): text plus colour, never colour alone; red only for knockout / expired / rejected.
 
 ## Changing the design system
 
@@ -33,8 +34,19 @@ Allowed when the library is incorrect, missing a component or token, or lacks fu
 - **Bug or mismatch, or an additive prop/slot/variant:** edit in place in the library, minimal and backwards-compatible.
 - **Risky change to a widely used component, or experimental:** fork it to `src/forks/<Name>/<Name>.vue` in this repo, with a header comment naming the source path and summarising the diff. Import it as `~/forks/<Name>/<Name>.vue`.
 - **Component in Figma but not in code:** create it in the library's `src/componentsV2/<Name>/` with `.vue`, `.stories.js`, `.figma.js` and `README.md`, following existing V2 patterns and Figma variables.
+- **Component in neither Figma nor code:** a **candidate** (D-15, next section). Not a library edit yet, and not a prototype-local widget either.
 - **Missing token:** don't edit `tokens.css` (it's generated). Log it as `needs-token` and use the closest existing token.
 - **Every change:** add a `// PROTOTYPE-CHANGE <date> (P-NNN): …` comment and a row in the log. Library work goes on a `feature/proto-<topic>` branch; ask before switching if the working tree is dirty.
+
+## Module prototypes and candidate components
+
+The Prequalification module (`docs/prequal/`: plan, spec, status model, screen inventory) is built as a set of screens that behave as one product area.
+
+- **Slugs:** `prequal-<screen>` (`prequal-dashboard`, `prequal-wizard`, `prequal-portal`, `prequal-review`, `prequal-record`). Shell = Preconstruction top nav + Prequalification rail (D-13), except the subcontractor portal (external user, no Linarc nav).
+- **Shared data and vocabulary:** `src/modules/prequal/` (`status.js`, `nav.js`, `data/`). Screens import from there. **Shell and routing:** every GC-side screen renders inside `~/modules/prequal/PrequalShell.vue`; links between screens use `~/modules/prequal/router.js` (`go(screen, id)`, `href(screen, id)`), which sets `?p=<slug>` and puts the record id in the hash, so each screen stays its own prototype slug for the picker and `yarn shot`.
+- **Candidate components** (D-15): when a screen needs a component that exists in neither Figma nor the library, it's proposed first (`docs/components/<Name>.md` from `_template.md`, row in `docs/components/README.md`), then built in `src/candidates/<Name>/<Name>.vue` (rules in `src/candidates/README.md`), imported as `~/candidates/<Name>/<Name>.vue`, then drawn in Figma with variables bound for a design iteration, and only then promoted into the library with stories, README, `.figma.js` and a P-row. A candidate is built as it will ship: props and slots, no page data, no imports from `src/prototypes/`. Header comment `CANDIDATE <date>`.
+- **Before proposing a candidate**, check the library, the Figma component list and the backlog; a variant of an existing component is an extension (P-row), not a candidate. Each screen should need fewer candidates than the one before; if not, say so.
+- **Every screen ends in Figma** as editable Light + Dark frames on the Documentation file's Draft page (skill step 6), so design reviews there.
 
 ## Figma variable → Tailwind class
 
@@ -66,4 +78,3 @@ Design system Figma file: `1HxMANBEaYWFqEFtazB20l` (Linarc Design System V3.2).
 - **Hosting (later):** the plan is a Vercel (or similar) URL. A hosted build needs the library source at build time, so it will require a monorepo, a git submodule or the published package. Not set up yet.
 - Legacy `@/components/TextEditor` uses webpack-only `require()` in its template and won't work under Vite. Use `TextEditorV2`.
 - CSS output is ~8 MB because the library safelists every class (`pattern: /.*/`) to support dynamic class names. This is expected; don't override it.
-- `src/prototypes/ds-check/` is a temporary wiring test (buttons, icon button, radio, checkbox in AppLayout). Delete it when no longer needed.

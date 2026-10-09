@@ -45,7 +45,7 @@ In the prototypes repo:
 4. `src/style.css` imports the library's `global.css`, then rebinds `body` colour and background to tokens (F-004).
 5. No secrets in `.npmrc` (F-001).
 
-**Check:** `yarn build` passes, **and** `yarn dev` + `yarn shot _blank <out>` exits 0 with both themes rendered (F-003: building isn't enough).
+**Check:** `yarn build` passes, **and** `yarn dev` + `yarn shot prequal-requests <out>` exits 0 with both themes rendered (F-003: building isn't enough).
 
 ## 4. Connect the agent to Figma
 

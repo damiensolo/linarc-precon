@@ -12,13 +12,16 @@ How we set up repeatable, design-system-accurate prototyping from Figma with an 
 | [4-decisions.md](4-decisions.md) | Key choices, the reasons for them, and the alternatives rejected | When a significant choice is made or reversed |
 | [findings-log.md](findings-log.md) | Append-only, dated findings: the raw material for everything else | Whenever something breaks, surprises us, or works notably well |
 | [prototypes/](prototypes/) | One record per prototype: gaps, fixes, checks, metrics | At the end of every prototype (skill step 6) |
+| [prequal/](prequal/) | The Prequalification module: plan and open questions, distilled spec, status model, screen inventory | Plan: when a question is answered or a decision made. Spec: only when the PRD changes. Screens: as each screen moves stage |
+| [components/](components/) | Candidate-component backlog and one proposal doc per candidate (D-15) | When a candidate is proposed, built, drawn in Figma or promoted |
+| `prd/` (gitignored) | The source PRD files as received; the authority behind `prequal/spec.md` | Never edited here |
 | [case-study/internal.md](case-study/internal.md) | Internal case study: full detail, real names, file keys and screenshots | At milestones |
 | [case-study/public.md](case-study/public.md) | External/public case study: narrative, anonymised | At milestones, after the internal version |
 
 ## How these docs stay current
 
 1. **During work:** any setup problem, workaround or surprise gets a `findings-log.md` entry when it's discovered (rule in `CLAUDE.md`).
-2. **After each prototype:** step 6 of the `figma-to-prototype` skill writes `prototypes/<slug>.md`. It also updates the playbook, readiness checklist or verification doc if a step changed.
+2. **After each prototype:** step 6 of the `figma-to-prototype` skill (step 7 of `prd-to-prototype`) writes `prototypes/<slug>.md`. It also updates the playbook, readiness checklist or verification doc if a step changed, and for module screens the `prequal/screens.md` status and the `components/` backlog stages.
 3. **Evidence:** screenshots that illustrate a point go into `case-study/assets/`, not the scratchpad. Name them `<finding-id>-<what>.png`.
 4. **Milestones** (first real screen, then every ~5 prototypes): update both case studies from the log and records, and list what still needs proof.
 

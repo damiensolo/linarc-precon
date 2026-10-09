@@ -277,3 +277,27 @@ How it was caught: a use_figma script over the mapped collection, then a gallery
 What changed: P-017. One variable (`container-raised`) is used for two roles (Toggle knob and modal panels); the code panels moved to `surface/container` rather than breaking the knob.
 Case study: Y. Audit variables by role, with a script, before publishing a library — dark mode bugs are invisible until someone looks, and screenshots only find them one at a time.
 
+
+## F-033 · 2026-10-08 · PRD arrived as chat transcripts; distilled before building
+Tags: ai-workflow
+What happened: the three Prequalification PRD files are AI chat exports (one is ~27k tokens with repeated sections, a stray "Continue" exchange and a dangling instruction at the end of another). Reading them each session would cost more than the spec itself and risks acting on text that isn't a requirement.
+Why it mattered: a module of six screens needs one stable source every session reads; the originals also hold open product decisions that must not be silently resolved by the prototype.
+How it was caught: reading all three before planning.
+What changed: `docs/prequal/spec.md` (distilled, marks [proposed] design choices vs PRD requirements, lists open product decisions), `status-model.md` (D-16), `screens.md`, `00-plan.md`; the originals stay untouched and gitignored in `docs/prd/`. New skill `prd-to-prototype` reads the distilled set. Candidate-component policy D-15 with a backlog in `docs/components/`.
+Case study: Y. Distil a PRD into a short working spec that separates requirements from proposals before any screen is built; the agent reads it every session.
+
+## F-034 · 2026-10-08 · A grep said StatusChip had 4 statuses; it has 7
+Tags: ai-workflow, design-system
+What happened: while planning the dashboard I grepped `statusChipTokenMap.js` for `^\s*[a-z-]*:\s*{` and saw success / error / info / ai. The map also has `'warning-low'`, `'warning-medium'` and `'warning-neutral'` as quoted keys, which the pattern skipped. The plan then proposed "extend StatusChip" and the user agreed, on a false premise.
+Why it mattered: a library change (code + Figma variants + Code Connect) would have duplicated what exists; one wasted design-system iteration and a confusing P-row.
+How it was caught: reading the token map and `StatusChip.figma.js` before editing.
+What changed: question 4 closed with no change; `toneToChipStatus()` maps the model's five tones onto the existing statuses. Skill `prd-to-prototype` step 2 already says "read the component before calling it a gap"; this is the example of why. No code or Figma change.
+Case study: Y. Before proposing a design-system change, read the component's source and Code Connect file, not a grep summary.
+
+## F-035 · 2026-10-08 · Edge exits with code 0 while an update is pending; `yarn shot` needs another browser
+Tags: tooling
+What happened: `yarn shot` failed with "Failed to launch the browser process: Code: 0" and an empty stderr, in every launch mode (default profile, separate profile, extra flags). Running `msedge.exe --headless=new --dump-dom about:blank` by hand also exited 0 with no output. The Edge install had two version folders (153 and 154) side by side: an update downloaded and waiting for Edge to restart; the launcher stub hands off and exits.
+Why it mattered: the whole verification step depends on a browser launch; the error text points at puppeteer, not at Edge.
+How it was caught: a standalone launch test script, then running Edge directly.
+What changed: used the script's existing `EDGE_PATH` override with the installed Chrome (`EDGE_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" yarn shot …`). Added to docs/3-verification.md. Restarting Edge once would also clear it.
+Case study: N.

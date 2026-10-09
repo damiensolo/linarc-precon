@@ -30,3 +30,5 @@
 
 ## Findings
 F-010, F-012.
+
+- **Removed 2026-10-08:** the page was deleted with `_blank` once real screens existed. This record stays for the case study.

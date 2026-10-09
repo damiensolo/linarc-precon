@@ -1,8 +1,8 @@
-# Submittals › Registry list (`registry-list`)
+# Preconstruction › Prequalification › Requests (`prequal-requests`, formerly `registry-list`)
 
 - **Date:** 2026-10-06
 - **Figma:** https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=1708-58317 (Package list, 1440×1024)
-- **URL:** `/?p=registry-list` (add `&chrome=0` for a full-window comparison)
+- **URL:** `/?p=prequal-requests` (add `&chrome=0` for a full-window comparison)
 - **Status:** done. First full-layout test of the workflow.
 
 ## Metrics
@@ -89,3 +89,4 @@ F-014, F-015, F-016, F-017, F-018, F-019, F-020, F-021, F-022, F-023.
 - **Dark mode (2026-10-07):** toolbar row and right-cluster buttons now use Figma's tokens (P-005); side nav dark background fixed at the variable (P-006). Figma docs on the Navigation Bar page now include Preconstruction (module list, Properties, a Preconstruction block, side-nav rail list and its own icon group). F-030.
 - **Dark mode, part 2 (2026-10-07):** row hover, view-type hover and every DataGrid popover now follow the theme (P-016). F-031.
 - **Dark mode, part 3 (2026-10-07):** system-wide variable audit and fixes (P-017, F-032). The page is consistently dark; the AI chip is the one open item.
+- **Pushed to Figma (2026-10-08):** editable Light and Dark copies of this screen on the Documentation file, Draft page (nodes 3726:76047 and 3726:77558). Built from the library: Top Nav Bar Module=Preconstruction (Prequalification selected in teal, Bookmarks hidden), Side Nav Preconstruction Selected=Prequalification (Requests selected), Title Bar / Page ("Requests", "Add Contractor"), Grid Primary Toolbar and Data Table header/cell instances. The Dark copy sets the `mapped` collection to Dark. Updating the library updates both copies.

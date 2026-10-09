@@ -34,7 +34,7 @@ Follow `../linarc-design-components/PRPs/prototype-changes/README.md`:
 
 ## 4. Build
 
-- Copy `src/prototypes/_blank/` to `src/prototypes/<slug>/`. Set `prototype: { title, figma: '<frame URL>' }`.
+- Create `src/prototypes/<slug>/index.vue` (start from an existing prototype). Export `prototype: { title, figma: '<frame URL>' }` from the component options; the picker lists it automatically.
 - Use `AppLayout` (`@/componentsV2/AppLayout/AppLayout.vue`) for page shells: `#header`, `#content`, `#left-panel`, `#right-panel`, `#bottom-panel` slots. Add `TopNavBar` / `SideNavV2` when the Figma frame shows them.
 - Split complex screens into `src/prototypes/<slug>/components/*.vue`. Put mock data in `src/prototypes/<slug>/data.js`, marked `// PLACEHOLDER DATA`.
 - Token classes only: no hex, no primitive palette (`bg-gray-*`), no raw (`p-6`) or arbitrary (`h-[56px]`) values.

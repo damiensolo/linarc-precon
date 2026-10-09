@@ -40,3 +40,7 @@ When a result looks wrong, check the tool before the UI. F-010: headless Edge qu
 ## State-change check (added 2026-10-07, F-029)
 
 Interactive components must not change size or position between states. For each button, tab, chip or input on the page, measure the bounding box at rest, with keyboard focus (Tab, so `:focus-visible` applies) and while pressed (`mouse.down()` without `mouse.up()`). Width, height, x and y must match in all three. Also read `getComputedStyle(el).outlineWidth` / `outlineOffset` to confirm the state stroke is drawn. Pattern: P-015 / F-029 (a puppeteer-core script in the scratchpad, as in the computed-value check).
+
+## If the browser won't launch
+
+`Failed to launch the browser process: Code: 0` with an empty stderr means the browser itself exited at once, not that puppeteer is misconfigured. Seen with Edge while an update was pending (two version folders under `Program Files (x86)/Microsoft/Edge/Application`; F-035). Either restart Edge once to let it finish updating, or point the script at another Chromium: `EDGE_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" yarn shot <slug> …`.
