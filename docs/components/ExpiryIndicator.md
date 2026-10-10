@@ -1,7 +1,7 @@
 # ExpiryIndicator
 
-- **Stage:** candidate (built 2026-10-08, used by `prequal-dashboard`)
-- **Proposed:** 2026-10-08 · **Used on:** `prequal-dashboard` (Expiration column), `prequal-record` (monitoring list), `prequal-portal` (document rows)
+- **Stage:** candidate (built 2026-10-08, used by `prequal-dashboard`; `timeline` variant 2026-10-09, used by `prequal-record`)
+- **Proposed:** 2026-10-08 · **Used on:** `prequal-dashboard` (Expiration column), `prequal-record` (monitoring list)
 - **Candidate code:** `src/candidates/ExpiryIndicator/ExpiryIndicator.vue` 
 - **Figma:** — · **Library:** — · **Log:** —
 
@@ -15,7 +15,7 @@ A date with its urgency: current (green) → expiring within the renewal window 
 - Figma V3.2: no expiry/validity component found (verify).
 
 ## Anatomy
-Leading dot (StatusIndicator, tone) → date (label/sm, text/default) → relative hint (label/sm, text/subtle: "in 22 days" / "12 days ago") → optional timeline bar (track `border/subtle`, fill by tone) under the text in the `timeline` variant → optional trailing action slot ("Request renewal", Button text/sm).
+Leading dot (StatusIndicator, tone) → date (label/sm, text/default) → relative hint (label/sm, text/subtle: "in 22 days" / "12 days ago") → optional timeline bar (ProgressBar `bar-only`: track `surface/progress-track`, fill by state) under the text in the `timeline` variant → optional trailing action slot ("Request renewal", Button text/sm).
 
 ## API
 | Prop | Type | Default | Notes |
@@ -39,6 +39,11 @@ Date format follows the library's `$moment` locale ("30 Sep 2027"); the relative
 
 ## Content
 "Valid through Dec 2027" (sub-facing, passed document) vs "Expires 30 Sep 2027" (GC-facing). The component takes a `label` prefix prop if both are needed; otherwise the caller composes.
+
+## Built so far (2026-10-09)
+- `variant="timeline"`: "Expires 20 Oct 2026 · in 12 days" over a ProgressBar `bar-only` (start → expiry, filled to today). The bar replaces the dot (one colour signal). Without `startDate` it renders the text only and wraps, which is how the record's key facts use it.
+- Bar fill: **current = `surface/warning-neutral`**, expiring = `surface/warning-low`, expired = `surface/error/default`. The spec says green for current; D-17 keeps colour for states that need action. **The user accepted the neutral bar for now (2026-10-09).** In light mode the neutral fill reads heavier than the yellow; a lighter neutral progress fill is needed (needs-token).
+- Date-only strings (`YYYY-MM-DD`) are read as local midnight (F-049); the library version must keep this.
 
 ## Open questions for design
 - Yellow vs orange for the expiring window; the PRD UX uses both words.

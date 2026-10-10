@@ -409,3 +409,19 @@ Why it mattered: the components were the library's, but the size mapping was wro
 How it was caught: the user asked whether the wizard's step badges came from the design system. Inspecting the Figma instances (20×20 slot, 16px circle, Show Stroke off) against StatusIndicator's size table showed the mismatch.
 What changed: both components now pass `layout="contained"`; measured 16×16 in the wizard and review screens. Lesson: Figma's Status Indicator has no layout property, so a Figma Size maps to code's `contained` layout. Use `inline` only for avatar-corner overlays.
 Case study: N.
+
+## F-049 · 2026-10-09 · Expiry dates showed a day early
+Tags: prototype, candidate
+What happened: ExpiryIndicator built dates with `new Date('2026-10-20')`. A date-only ISO string is parsed as UTC midnight, which is 19 Oct in any time zone west of UTC, so the record's Valid until read "19 Oct 2026" against data saying 20 Oct. The dashboard's Expiration column had the same off-by-one since screen 1.
+Why it mattered: expiry dates are the point of monitoring; a wrong day on a compliance date is a trust problem, and it only shows in some time zones.
+How it was caught: the record's first 1440 capture showed 19 Oct next to an audit entry saying 20 Oct.
+What changed: the candidate reads `YYYY-MM-DD` strings as local midnight (`toDate`). `$moment` already parsed them as local, which is why the other dates on the screens were right. Promotion note: the library version should take this behaviour.
+Case study: N.
+
+## F-050 · 2026-10-09 · The dark-mode audit checked variables, not where they're bound
+Tags: figma, dark-mode, design-system
+What happened: the ID chip in every Title Bar / Workflow lost its label in Dark mode (flagged on screens 2, 5 and 6). The Chip `Style=Solid` label was bound to `text/on-surface/default`. That variable is correct for its own job (content on a strong coloured fill, black in both modes) and passed the 271-variable audit (F-032), but it was used on `surface/subtle`, which is 5% white in Dark.
+Why it mattered: a variable-by-variable audit can't see a right variable in the wrong place; the bug only shows where a component combines the two.
+How it was caught: the Dark copies of the screen references, three times, before it was fixed.
+What changed: the 12 Solid variants' labels now use `text/default`, matching the Outline variants and the code (P-029). Audit idea for later: for each component variant, resolve the text colour against its own background in both modes and check contrast (≥ 4.5:1), rather than checking variables alone.
+Case study: Y. Variable audits and binding audits catch different bugs.

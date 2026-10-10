@@ -25,9 +25,8 @@
 import Button from '@/components/Button/Button.vue';
 import StatusChip from '@/components/StatusChip/StatusChip.vue';
 import EvidenceComparison from '~/candidates/EvidenceComparison/EvidenceComparison.vue';
-import { SEVERITY, toneToChipStatus } from '~/modules/prequal/status';
+import { SEVERITY, toneToChipStatus, RESOLUTION } from '~/modules/prequal/status';
 
-const RESOLUTION = { resolved: 'Resolved', dismissed: 'Dismissed', overridden: 'Overridden' };
 
 export default {
   name: 'FindingList',
@@ -44,7 +43,7 @@ export default {
       return toneToChipStatus(this.sev(f).tone, { strong: f.severity === 'missing' });
     },
     resolutionLabel(f) {
-      return RESOLUTION[f.resolution] || '';
+      return f.resolution && f.resolution !== 'unresolved' ? RESOLUTION[f.resolution].label : '';
     },
   },
 };

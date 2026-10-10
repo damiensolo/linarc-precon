@@ -13,8 +13,9 @@ Last updated 2026-10-09. Applies to every Prequalification screen and, unless a 
 | **List / dashboard** | Full page, **Title Bar / Page** (title + primary action) | `PrequalShell` default header | `prequal-dashboard` |
 | **External user, long application** (no Linarc account) | Reduced Linarc top nav (Company variant, logomark), **no side rail**, section nav in the left panel, fixed bottom panel for Previous / Save and exit / Next | AppLayout left + bottom panels | `prequal-portal` |
 | **Review / detail of one record with a decision** | Full page, **Title Bar / Workflow** header (back · name · ID chip · `Status:` chip); content left; **decision or activity in AppLayout's right panel** (sticky, own scroll; as the RFI screen's activity log); below 1024px the panel moves inline under the summary | TabNavigation (P-028) for sections; `PrequalShell` `right-panel` | `prequal-review` |
+| **Detail of one record without a decision** (e.g. a Qualification Record) | Same frame as review: Title Bar / Workflow header; record on the left; **activity / audit trail in the right panel**; inline at the end below 1024px. Record-level actions in the title bar's right side | `PrequalShell` `right-panel` | `prequal-record` |
 | **Supporting detail for one item on a page that has a right panel** (e.g. evidence for a finding) | Opens **in the right panel**, replacing its content, with a back arrow. The library has no drawer; don't invent one (open question for design) | — | `prequal-review` evidence view |
-| **Modal (ModalV2)** | Only for short, single-step tasks that don't need page context to be lost or kept: confirmations, a few fields, a choice. **Not for create flows.** | ModalV2 | — |
+| **Modal (ModalV2)** | Only for short, single-step tasks that don't need page context to be lost or kept: confirmations, a few fields, a choice. **Not for create flows.** | ModalV2 | `prequal-record` Request renewal (pick documents + message) |
 
 - Alternatives the user wants to compare are kept as a **second prototype slug**, `<slug>-<variant>` (picker title "… (version B: …)"), sharing state and step components with the default so only the pattern differs. Example: `prequal-wizard-modal` (the modal version of New request), sharing `src/prototypes/prequal-wizard/wizardState.js` and `components/`.
 - The default slug is always the chosen pattern; links from other screens (`router.js`) go to the default.
@@ -31,7 +32,7 @@ Last updated 2026-10-09. Applies to every Prequalification screen and, unless a 
 
 ## 3. Containers, lines, colour, icons (D-17)
 
-- **One container level per view.** Lists are rows divided by 1px `border-subtle` hairlines; the list has no outline of its own. Never a card inside a card. Use FormV2 `flat` (P-021) when the form is the page.
+- **One container level per view.** Lists are rows divided by 1px `border-border-subtle` hairlines; the list has no outline of its own. Never a card inside a card. Use FormV2 `flat` (P-021) when the form is the page.
 - **Colour means "act here".** Only the primary button and states that need action are coloured. Done = a check mark or a muted word; neutral states = muted words. Red only for knockout / expired / rejected.
 - **One signal per status:** a check *or* a word *or* a chip, never two together.
 - **Buttons are label-only.** No `+` on Add / New, no Send icon on Submit, no chevrons on Previous / Next / Continue. An icon only where it carries meaning the label lacks (icon-only buttons, the title bar back arrow, a file glyph on a file row).
@@ -52,7 +53,7 @@ Last updated 2026-10-09. Applies to every Prequalification screen and, unless a 
 
 ## 5. Open design flags (don't "fix" in code without a decision)
 
-- Figma Number Badge `Status=Disabled` and Chip `Style=Solid, Size=sm` lose their text in Dark mode; code renders them readably (needs-figma).
+- Figma Number Badge `Status=Disabled` loses its number in Dark mode; code renders it readably (needs-figma). (Chip `Style=Solid` had the same problem; fixed in Figma 2026-10-09, P-029 / F-050, visible in other files once the library is published.)
 - Figma Modal has no wide size; Title Bar / Workflow has no module-neutral Create variant (needs-figma).
 - No content-width token: the form columns use Tailwind `max-w-4xl` / `max-w-3xl` (needs-token: `layout/form-wide`, `layout/form`).
 - ProgressStepper active label is bold in code, Regular in Figma (P-025, for design).

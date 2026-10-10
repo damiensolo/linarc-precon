@@ -70,6 +70,14 @@ export const SEVERITY = def([
   ['info', 'Informational', 'neutral'],
 ]);
 
+/** Finding resolution (review screen). Unresolved shows nothing extra; the others are muted words (D-17). */
+export const RESOLUTION = def([
+  ['unresolved', 'Unresolved', 'warning'],
+  ['resolved', 'Resolved', 'success', 'Data corrected'],
+  ['dismissed', 'Dismissed', 'neutral', 'Match belongs to another entity'],
+  ['overridden', 'Overridden', 'neutral', 'Accepted with a reason; the original is kept'],
+]);
+
 /** Proof level per criterion value */
 export const PROOF = def([
   ['declared', 'Declared', 'neutral'],
@@ -80,6 +88,19 @@ export const PROOF = def([
   // `none` = nothing collected at that level for this item.
   ['pending', 'Pending', 'info'],
   ['none', 'Not collected', 'neutral'],
+]);
+
+/** Condition attached to an approval (Qualification Record, screen 6) */
+export const CONDITION = def([
+  ['open', 'Open', 'warning', 'Must be met before the trigger it names (e.g. mobilisation)'],
+  ['in-force', 'In force', 'neutral', 'A standing term (retainage, bonds on large contracts); nothing to do now'],
+  ['met', 'Met', 'success'],
+]);
+
+/** Renewal of a dated document on a Qualification Record (screen 6) */
+export const RENEWAL = def([
+  ['requested', 'Renewal requested', 'info'],
+  ['received', 'Renewal received', 'info', 'The new document is being checked'],
 ]);
 
 /** Sub-portal section completion */

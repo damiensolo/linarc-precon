@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-09
 - **Source:** `docs/prequal/spec.md` (screen 2), `docs/prequal/screens.md` §2
-- **Figma:** Light [3751:4083](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3751-4083) · Dark `3751:7308` (Documentation › Draft)
+- **Figma:** full page (default) Light [3752:6459](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3752-6459) · Dark `3752:9188`; version B (modal) Light `3751:4083` · Dark `3751:7308` (Documentation › Draft)
 - **URL:** `/?p=prequal-wizard` (default, full-page) · `/?p=prequal-wizard-modal` (version B, modal). `#subcontractor`, `#work`, `#requirements`, `#invite` open a step. The Overview's "New request" opens the default.
 - **Status:** verified
 
@@ -67,6 +67,7 @@
 **Flagged from the push:**
 - Figma *Step Trail* is dashed (4 / 4) for Default, Disabled and Error and solid only for Success; the code was solid everywhere and now matches (P-025).
 - Figma *Number Badge* `Status=Disabled` loses its number in Dark mode (the not-yet-reached steps read as empty grey dots); the code's badge stays legible. needs-figma: dark text token on the disabled Number Badge.
+- The title bar's `REQ-025` Chip (Solid, sm) lost its label in Dark mode: fixed in the library 2026-10-09 (P-029, F-050); it appears here once the library is published.
 - Figma shows the library as last published: the Select Menu `Type=Tags` variant (P-023) isn't available here until the library is published, which is why the reference shows step 1 rather than step 2.
 
 ## Findings

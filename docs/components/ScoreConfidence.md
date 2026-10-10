@@ -1,6 +1,6 @@
 # ScoreConfidence
 
-- **Stage:** candidate (built 2026-10-08, used by `prequal-dashboard`)
+- **Stage:** candidate (cell built 2026-10-08 for `prequal-dashboard`; strip 2026-10-09 for `prequal-review`)
 - **Proposed:** 2026-10-08 · **Used on:** `prequal-dashboard` (cell), `prequal-review` (strip), Review Queue
 - **Candidate code:** `src/candidates/ScoreConfidence/ScoreConfidence.vue` 
 - **Figma:** — · **Library:** — · **Log:** —

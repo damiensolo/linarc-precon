@@ -10,7 +10,7 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 
 - `yarn dev` → http://localhost:5173 (`?p=<slug>` picks a prototype, `?theme=dark|light` forces a theme)
 - `yarn build` → production build (catches import/compile errors)
-- `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core; the dev server must be running. Write output to the scratchpad, not the repo.
+- `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core (if Edge fails to launch, set `EDGE_PATH` to Chrome, F-041); the dev server must be running. Write output to the scratchpad, not the repo.
 
 ## Rules
 
@@ -44,7 +44,7 @@ Allowed when the library is incorrect, missing a component or token, or lacks fu
 
 The Prequalification module (`docs/prequal/`: plan, spec, status model, screen inventory) is built as a set of screens that behave as one product area.
 
-- **Slugs:** `prequal-<screen>` (`prequal-dashboard`, `prequal-wizard`, `prequal-portal`, `prequal-review`, `prequal-record`). Shell = Preconstruction top nav + Prequalification rail (D-13), except the subcontractor portal (external user, no Linarc nav).
+- **Slugs:** `prequal-<screen>` (`prequal-dashboard`, `prequal-wizard`, `prequal-portal`, `prequal-review`, `prequal-record`). Shell = Preconstruction top nav + Prequalification rail (D-13), except the subcontractor portal (external user: reduced Linarc top nav, Company variant with logomark, no side rail, no PrequalShell).
 - **Shared data and vocabulary:** `src/modules/prequal/` (`status.js`, `nav.js`, `data/`). Screens import from there. **Shell and routing:** every GC-side screen renders inside `~/modules/prequal/PrequalShell.vue`; links between screens use `~/modules/prequal/router.js` (`go(screen, id)`, `href(screen, id)`), which sets `?p=<slug>` and puts the record id in the hash, so each screen stays its own prototype slug for the picker and `yarn shot`.
 - **Candidate components** (D-15): when a screen needs a component that exists in neither Figma nor the library, it's proposed first (`docs/components/<Name>.md` from `_template.md`, row in `docs/components/README.md`), then built in `src/candidates/<Name>/<Name>.vue` (rules in `src/candidates/README.md`), imported as `~/candidates/<Name>/<Name>.vue`, then drawn in Figma with variables bound for a design iteration, and only then promoted into the library with stories, README, `.figma.js` and a P-row. A candidate is built as it will ship: props and slots, no page data, no imports from `src/prototypes/`. Header comment `CANDIDATE <date>`.
 - **Before proposing a candidate**, check the library, the Figma component list and the backlog; a variant of an existing component is an extension (P-row), not a candidate. Each screen should need fewer candidates than the one before; if not, say so.

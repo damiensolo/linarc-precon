@@ -60,7 +60,7 @@
 
 ## Figma reference
 Documentation › Draft: **Review — Light `3758:5648`**, **Dark `3758:8649`** (Dark = the Light frame with the `mapped` collection set to Dark and the logomark `Mode=Dark`). Overview shell with **Review Queue** selected on the rail; **Title Bar / Workflow** `Module=RFI, Status=Draft` (title Apex Electrical, Inc.; Chip `REQ-001`; the Type meta and its divider hidden; Status Chip `Info` "GC is reviewing"; document tools on the right hidden); context line; `ScoreConfidence — strip [candidate]` frame (Status Chip `Info` + labelled values); **Tab Navigation Bar** `Count=6` with the six labels; Summary with Status Chip `AI` "Lintel AI"; the first two findings, each with a `[candidate] EvidenceComparison` frame; **Right panel — Decision** frame (380, `surface/container`, left stroke `border/subtle`) with readiness rows (library check icon on `icon/success`), four Buttons, the request context. All fills, gaps and paddings bound to library variables.
-- Flags: the Chip (Solid, sm) in the title bar loses its label in Dark (already flagged on the wizard); the Tab Navigation count badge was not shown (Show Indicator left off); section scores, other tabs and the evidence view are in the prototype only.
+- Flags: the Chip (Solid, sm) in the title bar lost its label in Dark; **fixed in the library 2026-10-09 (P-029, F-050)**, shows here once the library is published; the Tab Navigation count badge was not shown (Show Indicator left off); section scores, other tabs and the evidence view are in the prototype only.
 
 ## Findings
 F-046 (right panel never visible from the shell). P-028 in the library log. A parallel session used P-026 / P-027 and F-040 to F-043 while this screen was built; this screen's IDs were moved to the next free numbers.

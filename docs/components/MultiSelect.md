@@ -51,7 +51,7 @@ Option labels as in the spec (`21 Fire Suppression`, `Northern California`, `Hea
 - Collapse to "+n" after a number of chips, or always wrap?
 
 ## Acceptance (for promotion to the library)
-- [ ] Figma component (or `Select Menu` variants) with the same props, built on Select Menu / Chip / Checkbox instances, variables bound, both modes
+- [x] Figma component (or `Select Menu` variants) with the same props, built on Select Menu / Chip / Checkbox instances, variables bound, both modes
 - [ ] `.vue` built on SelectV2 + Chip (not a new trigger), `.stories.js` with UsageDocs, `README.md`, `.figma.js`; Code Connect published
-- [ ] FormV2 `multiselect` field type switched to it; the hand-rolled chip UI in `SelectField.vue` removed (P-row)
+- [x] FormV2 `multiselect` field type switched to it; the hand-rolled chip UI in `SelectField.vue` removed (P-row)
 - [ ] Verified in both themes at 1440 / 1024 / 390; no size change across states

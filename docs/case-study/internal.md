@@ -1,54 +1,54 @@
 # Fix Figma first, then build
 
-*Internal · living draft · updated 2026-10-08 · first product screen done (Preconstruction › Prequalification › Requests)*
+*Internal · living draft · updated 2026-10-09 · milestone 2: Prequalification module, six MVP screens built from the written spec*
 
-**An AI agent built a full product screen from Figma in 13 minutes using only library components, and every mismatch it found traced to a specific bug in Figma, the library or the tokens.**
+**An AI agent built the six-screen Prequalification module from a written spec, not from Figma frames, using library components, then pushed each screen back to Figma as editable Light and Dark frames for design review.**
 
-**Why it matters:** prototypes built this way can go straight to engineering, and each one improves the library. 17 changes are logged so far, each ready for an MR.
+**Why it matters:** design gets an editable, token-bound starting point, and engineering gets screens made of real components. Every gap went into the library or a logged candidate, not into one-off page code. 29 library changes are logged, each ready for an MR.
 
 ## The big picture
-The agent doesn't see a picture. It reads layers, variables and component mappings.
+The agent doesn't see a picture. It reads layers, variables, component mappings and written rules.
 - Bound variables → it maps them to tokens and checks the output against them.
-- Raw values → it guesses.
+- Raw values or unwritten decisions → it guesses.
 
 ## What we found
-- **Figma was the first weak link.** 23 of the 30 md Icon Button variants had an unbound, oversized icon. A script found it in one pass; eyes had missed it (P-001).
-- **Every mismatch had an owner.** On the first product screen, 14 of 18 measured values matched Figma. All 4 misses were library defaults, not the prototype (F-017).
-- **The source-of-truth rule changed twice.** First code won by default (D-11), then the sibling component broke ties (F-024). Now Figma wins and code changes to match (D-14).
-- **"Set up" isn't "live."** One stale template had blocked every Code Connect publish, so the agent saw 0 mappings. Now 156 of 156 instances resolve (F-020). Later, a publish passed validation but showed the wrong icon in Dev Mode (F-027).
-- **A Figma stroke isn't a CSS border.** The CTA shrank 2px when pressed. Our checks only measured buttons at rest; the user caught it (F-029).
-- **Dark mode needs a script.** Three rounds of screenshots found 6 wrong variables. One audit of 271 variables found 54 (F-032).
-- **The test tools lied too.** Headless Edge rendered "390px" at 492px and hid an overflow (F-010).
+- **Milestone 1 (first screen): Figma was the weak link.** 23 of 30 md Icon Button variants had an unbound, oversized icon (P-001). On the first product screen, all 4 of the 18 measured mismatches were library defaults (F-017).
+- **The library shrank the work screen by screen.** New candidate components per screen: 3 (dashboard), 5 (portal), 0 (wizard), 1 (review), 0 (record). Later screens reused what earlier ones added.
+- **Figma had components that code didn't.** The Stepper and Tab Navigation existed only in Figma; the agent built them into the library instead of hand-coding lookalikes (P-025, P-028).
+- **The user's design review became rules.** "No modals for create", "centre the form", "no boxes inside boxes" became decisions D-17 to D-20 and a single patterns doc. Later screens followed them without being told again.
+- **Small misses still needed a human eye.** Step badges rendered at 12px instead of Figma's 16px; the user spotted it (F-048).
+- **Bugs hid in shared parts.** Expiry dates showed one day early in US time zones from screen 1 until screen 6 (F-049).
+- **Audits have blind spots.** The dark-mode variable audit passed a correct variable used in the wrong place: the ID chip's label vanished in Dark on every screen until it was rebound (F-050).
+- **Two agents, one log.** A parallel session wrote the same change-log numbers. The fix is to re-read the log just before every append (F-047).
 
 ## By the numbers
-- **13 min** from Figma link to a verified first product screen: top nav, side nav, title bar, toolbar and an 18-row table.
-- **14/18** computed values matched Figma on the first pass. The 4 misses have since been fixed.
-- **5/5** computed values matched exactly on the wiring test.
-- **156/156** component instances on the screen resolve to code in Dev Mode.
-- **54** dark-mode variable bugs found by one scripted audit.
-- **32** findings, **14** decisions, **17** library changes (7 done, 10 awaiting review, 0 merged).
+- **13 min** from Figma link to the first verified product screen (milestone 1).
+- **6** MVP screens built from the spec, plus a modal version B of the create flow for comparison.
+- **5 of 6** screens have editable Light and Dark Figma references; the subcontractor portal is still pending.
+- **8** candidate components in use (9 proposed; multi-select became a library extension); **2** Figma components given code.
+- **50** findings, **20** decisions, **29** library changes (8 done, 19 awaiting review, 1 awaiting library publish, 1 needing code).
 
 ## How it works
 1. **Machine-readable Figma:** bound variables, consistent variants, published Code Connect.
 2. **Real components:** the design system consumed from source.
-3. **Written-down rules:** a token mapping table, a step-by-step agent skill, and Figma as the source of truth.
-4. **Tracked fixes:** library gaps get fixed, flagged and logged for an MR.
-5. **Layered checks:** build → render → both themes → exact widths → every interaction state → numbers against Figma, plus a variable audit before publishing.
+3. **Written-down rules:** the token table, agent skills, Figma as source of truth, and a UI patterns doc of the user's design decisions.
+4. **Tracked fixes:** library gaps fixed and logged; components missing on both sides become candidates first.
+5. **Layered checks:** build → render → both themes → three widths → interactions scripted → numbers against Figma → editable Figma frames back for review.
 
 ## What we learned
 - **Fix the source, not the output.**
-- **Bind everything to variables.**
-- **Decide the source of truth once, and write it down.**
-- **Audit with scripts, not eyes.**
-- **Read back what you publish.**
-- **Measure every state, not just rest.**
+- **Write design decisions down once.** The agent repeats only what's written.
+- **Each screen should need fewer new parts than the last; if not, ask why.**
+- **Audit with scripts, and audit the bindings, not just the values.**
+- **Shared logs need a re-read before every write.**
 - **"It builds" isn't "it works." Verify the verifier.**
 
 ## What's next
-- **Get the changes merged:** 10 of the 17 await review. Open questions are toolbar responsiveness (P-007), Teleport (P-008), chip label padding (P-010) and tree indent (P-011).
-- **Real content for Requests:** the table still uses the registry placeholder data.
+- **Design review in Figma** of the six screens, then promote the candidates (Figma component → library → Code Connect).
+- **Publish the Figma library** so the dark-mode chip fix (P-029) and the new Select Menu tags variant reach other files.
+- **Portal Figma reference**, and merge requests for the 19 changes awaiting review.
 - **Hosting:** Vercel, blocked until the library source is available at build time (D-09).
 
-**Still to prove:** whether 13 minutes holds on a second screen; how much passes first time without the user catching something; whether a teammate can repeat the setup from the playbook.
+**Still to prove:** time per screen from the spec (not measured this round); whether design accepts the Figma frames as a starting point; whether a teammate can repeat the setup from the playbook.
 
-**Go deeper:** [playbook](../1-setup-playbook.md) · [Figma readiness](../2-figma-readiness.md) · [verification](../3-verification.md) · [findings](../findings-log.md) · [decisions](../4-decisions.md) · [Requests record](../prototypes/registry-list.md) · [library change log](../../../linarc-design-components/PRPs/prototype-changes/README.md)
+**Go deeper:** [UI patterns](../5-ui-patterns.md) · [module plan](../prequal/00-plan.md) · [screens](../prequal/screens.md) · [candidates](../components/README.md) · [playbook](../1-setup-playbook.md) · [verification](../3-verification.md) · [findings](../findings-log.md) · [decisions](../4-decisions.md) · [Requests record](../prototypes/prequal-requests.md) · [library change log](../../../linarc-design-components/PRPs/prototype-changes/README.md)

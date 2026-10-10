@@ -1,9 +1,9 @@
 # Preconstruction › Prequalification › Requests (`prequal-requests`, formerly `registry-list`)
 
 - **Date:** 2026-10-06
-- **Figma:** https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=1708-58317 (Package list, 1440×1024)
+- **Figma:** reference Light [3726:76047](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3726-76047) · Dark `3726:77558` (shows the older package table); source frame `1708:58317` (Package list, 1440×1024)
 - **URL:** `/?p=prequal-requests` (add `&chrome=0` for a full-window comparison)
-- **Status:** done. First full-layout test of the workflow.
+- **Status:** verified; in Figma (older package table). First full-layout test of the workflow.
 
 ## Metrics
 | Measure | Value |

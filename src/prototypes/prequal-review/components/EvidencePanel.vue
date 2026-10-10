@@ -40,9 +40,8 @@ import { ChevronLeft } from '@development/linarc-icons';
 import Button from '@/components/Button/Button.vue';
 import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import EvidenceComparison from '~/candidates/EvidenceComparison/EvidenceComparison.vue';
-import { SEVERITY } from '~/modules/prequal/status';
+import { SEVERITY, RESOLUTION } from '~/modules/prequal/status';
 
-const RESOLUTION = { resolved: 'Resolved', dismissed: 'Dismissed', overridden: 'Overridden' };
 
 export default {
   name: 'EvidencePanel',
@@ -59,7 +58,7 @@ export default {
       return SEVERITY[this.finding.severity];
     },
     resolutionLabel() {
-      return RESOLUTION[this.finding.resolution] || '';
+      return this.finding.resolution && this.finding.resolution !== 'unresolved' ? RESOLUTION[this.finding.resolution].label : '';
     },
   },
   watch: {

@@ -1,6 +1,6 @@
 # KpiCard
 
-- **Stage:** candidate (built 2026-10-08, used by `prequal-dashboard`)
+- **Stage:** figma (built 2026-10-08, used by `prequal-dashboard`; drawn on `_Candidates` 40024205:95)
 - **Proposed:** 2026-10-08 · **Used on:** `prequal-dashboard` (3 cards); later Review Queue and Qualified Subs summaries
 - **Candidate code:** `src/candidates/KpiCard/KpiCard.vue` 
 - **Figma:** V3.2 file, page `_Candidates` (`40024205:82`, not published), component set **KpiCard** `40024205:95` (State=Default `40024205:83`, State=Selected `40024205:89`; properties Label, Value, Hint, Icon swap, Show Icon). On the Documentation reference frames the three cards are plain frames named `[candidate] KpiCard` with the same bindings (`3730:4900`, `:4909`, `:4918` on the Light frame) · **Library:** — · **Log:** —
@@ -48,7 +48,7 @@ Label is the KPI name from `docs/prequal/status-model.md` ("Waiting for subcontr
 - Icon or no icon? The wireframe shows none.
 
 ## Acceptance (for promotion to the library)
-- [ ] Figma component with the same props as variants/properties, variables bound, both modes
+- [x] Figma component with the same props as variants/properties, variables bound, both modes
 - [ ] `.vue`, `.stories.js` with UsageDocs, `README.md`, `.figma.js`; Code Connect published
 - [ ] Verified in both themes at 1440 / 1024 / 390; no size change across states
 - [ ] Used by at least one prototype through the library path; candidate folder deleted

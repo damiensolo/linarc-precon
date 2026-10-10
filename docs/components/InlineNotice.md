@@ -1,7 +1,7 @@
 # InlineNotice
 
-- **Stage:** candidate (built 2026-10-09, used by `prequal-portal`)
-- **Proposed:** 2026-10-09 · **Used on:** `prequal-portal` (field mismatches, disclosure, readiness), later `prequal-review` (provisional recommendation), `prequal-wizard` (no matching template)
+- **Stage:** candidate (built 2026-10-09; used by `prequal-portal`, `prequal-wizard`, `prequal-review`, `prequal-record`)
+- **Proposed:** 2026-10-09 · **Used on:** `prequal-portal` (field mismatches, disclosure, readiness), `prequal-wizard` (open request for the chosen company), `prequal-review` (sample-data notice), `prequal-record` (no record yet)
 - **Candidate code:** `src/candidates/InlineNotice/InlineNotice.vue`
 - **Figma:** — · **Library:** — · **Log:** —
 

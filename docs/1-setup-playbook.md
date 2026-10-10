@@ -9,7 +9,7 @@ Repeat this to stand up accurate, design-system-based prototyping from Figma wit
 - A Figma seat with access to the design system file.
 - The design system library checked out as a sibling folder: `../linarc-design-components`.
 
-**Check:** `node -v`, `yarn -v` and `git --version` all work, and Edge exists at `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe` (or set `EDGE_PATH`).
+**Check:** `node -v`, `yarn -v` and `git --version` all work, and Edge exists at `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe` (or set `EDGE_PATH`; if Edge won't launch headless, point `EDGE_PATH` at Chrome, F-041).
 
 ## 1. Prepare Figma first
 
