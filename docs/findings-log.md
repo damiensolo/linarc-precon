@@ -343,7 +343,8 @@ How it was caught: the user's eye; confirmed by a scripted read of every variant
 What changed: P-022. Figma: icon 16×16 bound to `spacing/space-16` in all variants (glyph 8×8, stroke 1.5, unchanged); documentation updated (anatomy legend, a `spacing/space-16` token row, component description). Code: spec comment only. Readiness checklist: the stroke-scaling rule was narrowed, because the 16px glyphs in Chip and Tag keep 1.5px.
 Case study: N
 
-## F-040 · 2026-10-09 · A Figma frame created by the API carries a white fill; it only showed in Disabled and Dark
+## F-044 · 2026-10-09 · A Figma frame created by the API carries a white fill; it only showed in Disabled and Dark
+(Renumbered from F-040 on 2026-10-09: a parallel session had used F-040.)
 Tags: figma, tooling
 What happened: extending Select Menu with `Type=Tags` (P-023), the tags row was made with `figma.createAutoLayout`, which, like `createFrame`, gives the frame an opaque white fill. On the Default and Focused variants it was invisible (white on white). On the Disabled variants it showed as a white block inside the grey field, and in a Dark-mode check it hid the tags completely, which first looked like a Tag dark-token defect.
 Why it mattered: the published component would have shipped with a white block in two of six variants and in every dark screen; the light Default screenshot, which is the one usually taken, passes.
@@ -358,11 +359,53 @@ Why it mattered: (1) the chrome is the first thing every reviewer sees, and the 
 How it was caught: (1) the user's screenshot; (2) every `yarn shot` and one-off puppeteer run since 2026-10-08.
 What changed: App.vue uses SelectV2. Edge is unresolved; restart Edge (or Windows) to finish the update, or set `EDGE_PATH` to another Chromium browser.
 Case study: N
+Resolved: 2026-10-09, `EDGE_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" yarn shot …` works (Chrome is installed). Edge still fails while the 153→154 update waits for a restart.
 
-## F-041 · 2026-10-09 · The dev server's Tailwind missed classes that only new files use
+## F-045 · 2026-10-09 · The dev server's Tailwind missed classes that only new files use
+(Renumbered from F-041 on 2026-10-09: a parallel session had used F-041.)
 Tags: tooling
 What happened: the wizard's `sm:flex-row`, `sm:basis-1/3` and `sm:gap-space-16` worked in `yarn build` but not on the long-running dev server: the rows stayed stacked at 1440. `getComputedStyle` showed `flex-direction: column`; the production CSS had the rules inside `@media (width>=640px)` after `flex-col`. The dev server's stylesheet had been generated before the new folder `src/prototypes/prequal-wizard/` existed and hadn't been re-processed, and with the catch-all safelist (D-04) only base utilities are guaranteed, not responsive variants.
 Why it mattered: a layout that looks wrong in screenshots but is right in the build sends you after a CSS bug that isn't there.
 How it was caught: screenshots at 1440 showed mobile layout; a probe compared the dev server's computed style with the build's CSS.
 What changed: `touch src/style.css` makes Vite re-run PostCSS / Tailwind (about a minute with the 8 MB stylesheet; the first `yarn shot` right after can time out). Added to `docs/3-verification.md`.
+Case study: N.
+
+## F-042 · 2026-10-09 · Dark-mode borders were 2–10× harsher than light; the dark token source had 57 unbuilt changes
+Tags: design-system, figma, tooling
+What happened: the user flagged dark mode's borders as too heavy next to Linear's. Measured against each mode's container surface, light hairlines (`border/subtle`, `muted`, `inactive`, `soft`) sit at 1.1–1.5:1, but their Dark values sat at 1.8–7:1, `border/neutral` at 17:1 (zinc/100, brighter than light's zinc/400), the secondary outline set at 10–15:1, and `border/secondary/active` darker than the surface it outlines. Linear's dark UI (Mobbin screens, pixels sampled) keeps rings, row dividers and chip outlines at 1.1–1.3:1 and separates regions with surface steps (#070707 page → #0f0f0f panel → #181818 group band), not lines. While mirroring the fix into code, `tokens/src/mapped/Dark.json` turned out to carry P-017's 57 dark-mode audit values (2026-10-07) uncommitted and never built, so `tokens.css` was stale against its own source.
+Why it mattered: every card, table row and chip in dark mode glowed, and the prototype's dark screenshots were not a fair review surface. A stale generated file means code and Figma disagree in ways nobody logged.
+How it was caught: contrast ratios computed for every neutral border in both modes, pixel sampling of the Linear screenshots, then `git diff` on the token source after the rebuild touched 72 values instead of 15.
+What changed: P-026. Figma: 15 Dark values rebound to existing primitives (white-alpha/50, /100, /200; zinc 400–700; gray 400–700), so each token keeps roughly its light-mode weight; no new tokens. Code: same values in `Dark.json`, `yarn tokens:build`; the rebuild also compiled P-017's 57 pending values, flagged in the P-row. Not changed, flagged for design: `surface/container` Dark (#131313) is darker than `surface/page` (#18181b), the inverse of Linear's layering, and `surface/container-raised` Dark is white. Verification: Edge cannot launch for `yarn shot` (F-041), so `EDGE_PATH` pointed at Chrome; the first run after a `tokens.css` rebuild times out while Vite reprocesses the 8 MB stylesheet (same as F-041's touch note). Figma's `saveVersionHistoryAsync` is not supported by `use_figma`, so no checkpoint was saved before the variable write; the before values are in the P-row.
+Case study: Y. Balance dark borders by contrast ratio against the dark surface, not by picking a "dark-looking" shade; and rebuild generated files before judging the code side.
+
+## F-043 · 2026-10-09 · A bare `border-default` class is silently Tailwind's preflight grey; and a nav edge was bound to a button-state token
+Tags: design-system, tooling
+What happened: after P-026 the user still saw heavy lines under the top nav and the title bar in dark mode. (1) The title bar, side nav and panel edges in `AppLayout.vue` were written as `border-b border-default`. In this Tailwind config border colours are `border-border-*` (`colors.border.default`), so `border-default` matches nothing, and the edge takes the preflight border colour, Tailwind's gray-200 (#e5e7eb), in both themes. Pixel sampling showed the same #e5e7eb in light and dark, which is what gave it away: no token is identical in both modes there. Same bug in `TaskCodeModal.vue` and `Avatar.vue` (`border-container`). (2) The 2px nav edge was bound, in Figma and code, to `border/secondary/active`, a secondary-button state; P-026 made that token brighter for buttons and the nav line followed.
+Why it mattered: an invalid token class is invisible in light mode, where #e5e7eb is a plausible hairline, and only shows up as a wrong colour in dark mode. A nav edge tied to a button state changes whenever the button is tuned.
+How it was caught: pixel sampling the screenshot in both themes, then reading the stroke bindings on the Figma Top Nav Bar and Title Bar components.
+What changed: P-027. Figma: 29 nav strokes rebound to `border/container-invert`; descriptions updated. Code: `TopNavBar/index.vue`, `AppLayout.vue`, `TaskCodeModal.vue`, `Avatar.vue` use the `border-border-*` classes Figma binds (inactive for title bar, side nav, panel edges, modal dividers; subtle for toolbar row and footer). Rule added to CLAUDE.md: border colour classes are `border-border-*`; grep for bare `border-(default|subtle|inactive|muted|container|neutral|soft)` before calling a screen done. Remaining bare uses are comments, plus `SelectV2.fieldBorderColorToken` (`border-inactive` for the disabled field; see P-027).
+Case study: Y. A class that matches no token fails silently to the framework default; sample the pixel in both themes, and anything identical in both is suspect.
+
+## F-046 · 2026-10-09 · The shell's right panel was enabled but never shown
+Tags: design-system, tooling
+What happened: the review screen passed `right-panel` to `PrequalShell`, which set AppLayout's `rightPanelEnabled` but not `rightPanelVisible`. AppLayout defaults `rightPanelVisible` to false (panels open on demand), so the Decision panel was mounted but hidden at 1440; the phone layout, which renders the panel inline, looked right.
+Why it mattered: the screen's key element was missing on desktop with no error.
+How it was caught: the first 1440 screenshot had no right panel while the 390 one had the decision content.
+What changed: `PrequalShell` passes `:right-panel-visible="rightPanel"`. For AppLayout consumers: enabled is not visible.
+Case study: N.
+
+## F-047 · 2026-10-09 · Two sessions numbered log entries at the same time
+Tags: ai-workflow, tooling
+What happened: a parallel session (dark-mode border tokens) appended to the same change log and findings log while this session built screens 2 and 5. Both picked the next free number from what they had read earlier, so P-022, F-040 and F-041 were used twice and P-026 was taken before this session wrote it.
+Why it mattered: duplicate IDs make references ambiguous, and the logs are what later sessions rely on after a context reset.
+How it was caught: re-reading the log tails before appending (the TabNavigation row would have been the second P-026).
+What changed: this session's entries were renumbered (P-023, F-044, F-045, P-028) with a note on each; the parallel session's entries were left as written. Rule: read the log tail immediately before appending, and re-check the number after writing.
+Case study: Y. Shared append-only logs need a re-read right before each write when more than one agent works in the repo.
+
+## F-048 · 2026-10-09 · Stepper and tab badges rendered at 12px instead of Figma's 16px
+Tags: design-system, figma
+What happened: ProgressStepper (P-025) and TabNavigation (P-028) rendered StatusIndicator `size="sm"` with `layout="inline"`. In code, inline sm is a 12px circle; Figma's Stepper Component and Tab Navigation use Number Badge Size=sm, a 16px circle in a 20px slot, which is code's `layout="contained"`. The digits looked cramped and the badges read as not ours.
+Why it mattered: the components were the library's, but the size mapping was wrong, so they didn't match Figma.
+How it was caught: the user asked whether the wizard's step badges came from the design system. Inspecting the Figma instances (20×20 slot, 16px circle, Show Stroke off) against StatusIndicator's size table showed the mismatch.
+What changed: both components now pass `layout="contained"`; measured 16×16 in the wizard and review screens. Lesson: Figma's Status Indicator has no layout property, so a Figma Size maps to code's `contained` layout. Use `inline` only for avatar-corner overlays.
 Case study: N.

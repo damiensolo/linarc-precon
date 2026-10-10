@@ -76,6 +76,10 @@ export const PROOF = def([
   ['evidenced', 'Evidenced', 'info'],
   ['verified', 'Verified', 'success'],
   ['contradicted', 'Contradicted', 'error'],
+  // Added with screen 5: a level with no value yet. `pending` = the check that would verify it is still running;
+  // `none` = nothing collected at that level for this item.
+  ['pending', 'Pending', 'info'],
+  ['none', 'Not collected', 'neutral'],
 ]);
 
 /** Sub-portal section completion */

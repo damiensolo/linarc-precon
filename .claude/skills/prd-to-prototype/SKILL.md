@@ -13,6 +13,7 @@ Stack and rules: `CLAUDE.md` (always-on rules, change policy, token table, candi
 2. `docs/prequal/spec.md` (not the raw `docs/prd/` files; they're long transcripts), `docs/prequal/status-model.md`, the screen's row and section in `docs/prequal/screens.md`.
 3. `docs/components/README.md` → which candidates exist already and at what stage. `src/modules/prequal/` → shared status vocabulary and mock data.
 4. The previous screen's record in `docs/prototypes/` for conventions already chosen.
+5. **`docs/5-ui-patterns.md`**: the page pattern for each kind of task (create = full-page with Title Bar / Workflow, not a modal), layout, white space and visual rules the user has already decided. Don't re-open them.
 
 ## 1. Scope the screen
 
@@ -20,7 +21,7 @@ Write, in the prototype record (`docs/prototypes/<slug>.md`, from `_template.md`
 - Persona and what they must decide on this screen (one sentence each).
 - Nav position (module › tool › rail item; D-13) and the page title.
 - Data the screen needs: which shared entities (`requests`, `companies`, `findings`, `documents`, `records`) and which status dimensions.
-- The Figma pattern to use for each interaction (modal vs drawer vs panel, table vs list, toasts). Patterns come from the V3.2 library's existing product screens in the Documentation file; if none fits, **stop and ask** rather than inventing one.
+- The Figma pattern to use for each interaction (modal vs drawer vs panel, table vs list, toasts). Start from `docs/5-ui-patterns.md` (e.g. create flows are full-page screens, not modals); then the V3.2 library's existing product screens in the Documentation file; if none fits, **stop and ask** rather than inventing one.
 
 ## 2. Component map
 

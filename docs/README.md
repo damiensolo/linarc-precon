@@ -10,6 +10,7 @@ How we set up repeatable, design-system-accurate prototyping from Figma with an 
 | [2-figma-readiness.md](2-figma-readiness.md) | What "machine-readable Figma" means, as a checklist with evidence | When a Figma issue affects code accuracy |
 | [3-verification.md](3-verification.md) | The verification steps, what each one catches and how to run it | When a check is added or a new failure mode appears |
 | [4-decisions.md](4-decisions.md) | Key choices, the reasons for them, and the alternatives rejected | When a significant choice is made or reversed |
+| [5-ui-patterns.md](5-ui-patterns.md) | **Read before building any screen.** Page patterns (full-page create vs modal), layout and white space, containers / colour / icons, which components to use, open design flags | When the user decides a UI or pattern question in review |
 | [findings-log.md](findings-log.md) | Append-only, dated findings: the raw material for everything else | Whenever something breaks, surprises us, or works notably well |
 | [prototypes/](prototypes/) | One record per prototype: gaps, fixes, checks, metrics | At the end of every prototype (skill step 6) |
 | [prequal/](prequal/) | The Prequalification module: plan and open questions, distilled spec, status model, screen inventory | Plan: when a question is answered or a decision made. Spec: only when the PRD changes. Screens: as each screen moves stage |

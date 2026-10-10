@@ -34,11 +34,21 @@
         class="flex-1 min-w-0"
         :left-panel-enabled="false"
         :right-panel-enabled="rightPanel"
+        :right-panel-visible="rightPanel"
+        :bottom-panel-enabled="bottomPanel"
+        :bottom-panel-visible="bottomPanel"
+        :bottom-panel-resizable="false"
+        :bottom-panel-default-height="64"
+        :bottom-panel-min-height="64"
+        :no-bottom-padding="true"
         :scrollable-content="scrollableContent"
         :persist-preferences="false"
       >
         <template #header>
-          <span class="font-label font-bold text-fontsize-16 leading-lineheight-24 text-text-default">{{ title }}</span>
+          <!-- Default: Title Bar / Page (title only). Create screens pass their own (Title Bar / Workflow). -->
+          <slot name="header">
+            <span class="font-label font-bold text-fontsize-16 leading-lineheight-24 text-text-default">{{ title }}</span>
+          </slot>
         </template>
         <template #header-actions>
           <slot name="header-actions" />
@@ -48,6 +58,9 @@
         </template>
         <template v-if="rightPanel" #right-panel>
           <slot name="right-panel" />
+        </template>
+        <template v-if="bottomPanel" #bottom-panel>
+          <slot name="bottom-panel" />
         </template>
       </AppLayout>
     </div>
@@ -72,6 +85,8 @@ export default {
     /** Page title shown in the title bar. */
     title: { type: String, required: true },
     rightPanel: { type: Boolean, default: false },
+    /** Fixed 64px bar under the content (step navigation on create screens). */
+    bottomPanel: { type: Boolean, default: false },
     scrollableContent: { type: Boolean, default: false },
   },
   data() {

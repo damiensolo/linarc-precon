@@ -37,7 +37,7 @@
         <h3 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Qualifications on file</h3>
         <ul class="m-0 flex list-none flex-col divide-y divide-border-subtle p-0">
           <li v-for="q in history.qualifications" :key="q.id" class="flex flex-wrap items-center gap-x-space-16 gap-y-space-4 py-space-12">
-            <div class="flex min-w-0 flex-1 flex-col font-label">
+            <div class="flex w-full min-w-0 flex-col font-label sm:w-auto sm:flex-1">
               <span class="text-fontsize-14 leading-lineheight-20 text-text-default">{{ q.project }} · {{ q.templateName }}</span>
               <span class="text-fontsize-12 leading-lineheight-16 text-text-subtle">
                 {{ money(q.single) }} single · {{ money(q.aggregate) }} aggregate · valid until {{ $moment(q.validUntil).format('D MMM YYYY') }}

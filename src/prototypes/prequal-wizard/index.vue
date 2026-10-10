@@ -1,200 +1,104 @@
 <template>
-  <!-- Preconstruction › Prequalification › New request: the Start Prequalification wizard (docs/prequal/screens.md §2).
-       Pattern from the V3.2 library (2026-10-09): Modal (ModalV2, customSlot) over the Overview, with the Figma
-       Stepper Component + Step Trail as ProgressStepper (library, P-025). No drawer exists in the library.
-       Steps: Subcontractor · Work context · Requirements & checks · Invite. `#<step id>` opens a step.
-       Data: src/modules/prequal/data/wizard.js. Visual rules D-17: label-only buttons, hairlines, whitespace. -->
-  <div class="h-full">
-    <PrequalDashboard />
+  <!-- Preconstruction › Prequalification › New request — DEFAULT VERSION: full-page create screen (user direction
+       2026-10-09). Pattern from the app and the V3.2 library: the RFI "Create" screen (Documentation file,
+       RFI- Details) keeps the module nav and puts Title Bar / Workflow (back arrow, title, ID chip; Code Connect:
+       AppLayout #header) above a full-page form. Version B, the same steps in a modal, is `prequal-wizard-modal`.
+       Layout (D-18): the stepper and form sit in a centred 56rem column (wide-form width: tables and two-column fields); the fixed footer's buttons align to it.
+       Steps and state: ./wizardState.js and ./components/. Visual rules D-17. `#<step id>` opens a step. -->
+  <PrequalShell screen="dashboard" title="New prequalification request" :scrollable-content="true" :bottom-panel="true">
+    <!-- Title Bar / Workflow, Status=Create: back · title · document ID chip -->
+    <template #header>
+      <span class="flex min-w-0 items-center gap-space-8">
+        <Button label="" aria-label="Back to Overview" color-scheme="secondary" variant="minimal" size="medium" @onClick="close">
+          <template #leftIcon><ChevronLeft /></template>
+        </Button>
+        <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">New prequalification request</span>
+        <Chip :label="requestId" size="small" fill-style="solid" type="default" :removable="false" class="shrink-0" />
+      </span>
+    </template>
+    <template #header-actions>
+      <span v-if="savedText" class="hidden font-label text-fontsize-12 leading-lineheight-16 text-text-soft sm:inline">{{ savedText }}</span>
+    </template>
 
-    <ModalV2
-      :is-visible="open"
-      variant="customSlot"
-      title="New prequalification request"
-      :right-icon="closeIcon"
-      :close-on-blur="false"
-      @closeModal="close"
-      @onRightIconClick="close"
-    >
-      <template #modal-body>
-        <div class="wizard flex flex-col gap-space-24">
-          <ProgressStepper
-            :steps="steps"
-            :current="current"
-            :labels="isNarrow ? 'active' : 'all'"
-            :navigable="true"
-            :fluid="true"
-            aria-label="Request steps"
-            @select="goTo"
-          />
-          <div ref="scroller" class="wizard__scroll min-h-0 overflow-y-auto pr-space-4">
-            <StepSubcontractor
-              v-if="current === 'subcontractor'"
-              :company-id="draft.companyId"
-              :adding="adding"
-              :new-company="draft.newCompany"
-              @company="pickCompany"
-              @adding="adding = $event"
-              @new-company="draft.newCompany = $event"
-              @open-request="openRequest"
-              @open-record="openRecord"
-            />
-            <StepWork v-else-if="current === 'work'" :work="draft.work" @input="draft.work = { ...draft.work, ...$event }" />
-            <StepRequirements
-              v-else-if="current === 'requirements'"
-              :work="draft.work"
-              :template="draft.template"
-              :checks="draft.checks"
-              :company-name="companyName"
-              @template="draft.template = $event"
-              @checks="draft.checks = $event"
-            />
-            <StepInvite v-else :company="recipientCompany" :draft="draft" @edit="goTo" @message="draft.message = $event" />
-          </div>
-        </div>
-      </template>
+    <template #content>
+      <div class="mx-auto flex w-full max-w-4xl flex-col gap-space-32 pt-space-16">
+        <ProgressStepper
+          :steps="steps"
+          :current="current"
+          :labels="isNarrow ? 'active' : 'all'"
+          :navigable="true"
+          :fluid="true"
+          aria-label="Request steps"
+          @select="goTo"
+        />
+        <StepSubcontractor
+          v-if="current === 'subcontractor'"
+          :company-id="draft.companyId"
+          :adding="adding"
+          :new-company="draft.newCompany"
+          @company="pickCompany"
+          @adding="adding = $event"
+          @new-company="draft.newCompany = $event"
+          @open-request="openRequest"
+          @open-record="openRecord"
+        />
+        <StepWork v-else-if="current === 'work'" :work="draft.work" @input="draft.work = { ...draft.work, ...$event }" />
+        <StepRequirements
+          v-else-if="current === 'requirements'"
+          :work="draft.work"
+          :template="draft.template"
+          :checks="draft.checks"
+          :company-name="companyName"
+          @template="draft.template = $event"
+          @checks="draft.checks = $event"
+        />
+        <StepInvite v-else :company="recipientCompany" :draft="draft" @edit="goTo" @message="draft.message = $event" />
+      </div>
+    </template>
 
-      <template #modal-footer>
-        <div class="flex w-full items-center justify-between gap-space-12">
-          <Button v-if="index > 0" label="Back" color-scheme="secondary" variant="outline" size="medium" @onClick="goTo(steps[index - 1].id)" />
-          <Button v-else label="Cancel" color-scheme="secondary" variant="minimal" size="medium" @onClick="close" />
+    <!-- Fixed footer: the bar spans the content area; its buttons align to the centred form column (D-18). -->
+    <template #bottom-panel>
+      <div class="flex h-full items-center px-space-20">
+        <footer class="mx-auto flex w-full max-w-4xl items-center justify-between gap-space-12">
+          <Button :label="index > 0 ? 'Back' : 'Cancel'" color-scheme="secondary" :variant="index > 0 ? 'outline' : 'minimal'" size="medium" @onClick="back" />
           <div class="flex items-center gap-space-12">
-            <span v-if="savedText" class="hidden font-label text-fontsize-12 leading-lineheight-16 text-text-soft sm:inline">{{ savedText }}</span>
             <Button label="Save draft" color-scheme="secondary" variant="minimal" size="medium" @onClick="saveDraft" />
-            <Button
-              :label="isLast ? 'Send invite' : 'Next'"
-              color-scheme="primary"
-              variant="solid"
-              size="medium"
-              :is-disabled="!canContinue"
-              @onClick="isLast ? send() : goTo(steps[index + 1].id)"
-            />
+            <Button :label="isLast ? 'Send invite' : 'Next'" color-scheme="primary" variant="solid" size="medium" :is-disabled="!canContinue" @onClick="next" />
           </div>
-        </div>
-      </template>
-    </ModalV2>
-  </div>
+        </footer>
+      </div>
+    </template>
+  </PrequalShell>
 </template>
 
 <script>
-import { X } from '@development/linarc-icons';
-import ModalV2 from '@/componentsV2/ModalV2/ModalV2.vue';
+import { ChevronLeft } from '@development/linarc-icons';
 import ProgressStepper from '@/componentsV2/ProgressStepper/ProgressStepper.vue';
 import Button from '@/components/Button/Button.vue';
-import PrequalDashboard from '../prequal-dashboard/index.vue';
+import Chip from '@/components/Chip/Chip.vue';
+import PrequalShell from '~/modules/prequal/PrequalShell.vue';
 import StepSubcontractor from './components/StepSubcontractor.vue';
 import StepWork from './components/StepWork.vue';
 import StepRequirements from './components/StepRequirements.vue';
 import StepInvite from './components/StepInvite.vue';
-import { companyById } from '~/modules/prequal/data';
-import { steps, initialDraft } from '~/modules/prequal/data/wizard';
-import { currentRoute, go } from '~/modules/prequal/router';
+import wizardState from './wizardState';
 
 export default {
   name: 'PrequalWizard',
+  mixins: [wizardState],
   prototype: {
     title: 'Preconstruction › Prequalification › New request',
-    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3751-4083',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3752-6459',
   },
-  components: { ModalV2, ProgressStepper, Button, PrequalDashboard, StepSubcontractor, StepWork, StepRequirements, StepInvite },
+  components: { PrequalShell, ProgressStepper, Button, Chip, ChevronLeft, StepSubcontractor, StepWork, StepRequirements, StepInvite },
   data() {
-    const route = currentRoute();
-    return {
-      steps,
-      current: route.id && steps.some((s) => s.id === route.id) ? route.id : 'subcontractor',
-      draft: initialDraft(),
-      adding: false,
-      open: true,
-      closeIcon: X,
-      savedAt: null,
-      isNarrow: false,
-    };
-  },
-  computed: {
-    index() {
-      return steps.findIndex((s) => s.id === this.current);
-    },
-    isLast() {
-      return this.index === steps.length - 1;
-    },
-    company() {
-      return this.draft.companyId ? companyById[this.draft.companyId] : null;
-    },
-    /** The invite goes to a Linarc company's contact, or to the contact typed for a new company. */
-    recipientCompany() {
-      if (this.company) return this.company;
-      const n = this.draft.newCompany;
-      return { name: n.name || 'New company', contact: n.contact || 'Contact', email: n.email || '—' };
-    },
-    companyName() {
-      return this.recipientCompany.name;
-    },
-    canContinue() {
-      if (this.current === 'subcontractor') {
-        const n = this.draft.newCompany;
-        return Boolean(this.draft.companyId || (this.adding && n.name && n.contact && n.email));
-      }
-      if (this.current === 'work') {
-        const w = this.draft.work;
-        return Boolean(w.project && w.trades.length && w.single && w.aggregate);
-      }
-      return true;
-    },
-    savedText() {
-      return this.savedAt ? `Draft saved ${this.$moment(this.savedAt).format('h:mm a')}` : '';
-    },
-  },
-  mounted() {
-    this.mq = window.matchMedia('(max-width: 639px)');
-    this.isNarrow = this.mq.matches;
-    this.onMq = (e) => { this.isNarrow = e.matches; };
-    this.mq.addEventListener('change', this.onMq);
-  },
-  beforeDestroy() {
-    if (this.mq) this.mq.removeEventListener('change', this.onMq);
+    // PLACEHOLDER DATA: the next request number after req-024.
+    return { requestId: 'REQ-025' };
   },
   methods: {
-    goTo(id) {
-      if (!id || id === this.current) return;
-      this.current = id;
-      window.history.replaceState(null, '', `${window.location.search}#${encodeURIComponent(id)}`);
-      if (this.$refs.scroller) this.$refs.scroller.scrollTop = 0;
-    },
-    pickCompany(id) {
-      this.draft.companyId = id;
-      if (id) this.adding = false;
-    },
-    saveDraft() {
-      this.savedAt = new Date();
-    },
-    close() {
-      this.open = false;
-      go('dashboard');
-    },
-    send() {
-      // Prototype: the mock data is static, so the new request isn't added to the Overview.
-      this.open = false;
-      go('dashboard');
-    },
-    openRequest(r) {
-      go(r.workflow === 'in-progress' || r.workflow === 'invited' || r.workflow === 'draft' ? 'dashboard' : 'review', r.id);
-    },
-    openRecord(q) {
-      go('record', q.id);
+    scrollElement() {
+      return this.$el.querySelector('.lnrc-app-layout__content-body');
     },
   },
 };
 </script>
-
-<style scoped>
-/* The modal (ModalV2 customSlot) takes its width from the content. Figma's Modal frames have no wide size, so the
-   width is set here: 48rem (Tailwind max-w-3xl), never wider than the viewport minus the overlay and body padding.
-   The step content scrolls inside the modal so the footer (Back / Save draft / Next) stays on screen (D-17).
-   needs-figma: a "wide / wizard" Modal size; needs-token: none (space tokens only). */
-.wizard {
-  width: min(48rem, calc(100vw - 4 * var(--space-16)));
-}
-.wizard__scroll {
-  max-height: calc(100vh - 2 * var(--space-16) - 2 * var(--space-64) - 2 * var(--space-40) - var(--space-24));
-}
-</style>
