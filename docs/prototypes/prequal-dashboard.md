@@ -65,3 +65,6 @@ F-034, F-035.
 
 ## Screenshots
 Scratchpad only for now; copy the 1440 light/dark pair to `docs/case-study/assets/` at the next milestone.
+
+## Update 2026-10-09: column widths and pinned action
+At the user's request the request table (`src/modules/prequal/requestColumns.js`, shared by the Overview and Requests) was tightened to measured content widths (Subcontractor 210, Trade 130, Project 155, Template 210, Status 275, Score · Confidence 150, Expiration 190, Last activity 180 flex, action 110; was ~1,830px wide, now 1,555px at 1440 in a 1,307px scroller), and the row action became a `type: 'Actions'`, `frozen: true` column, pinned to the right edge (the `cell` button still renders). Checked with puppeteer: all row actions stay visible at scroll 0 and 150px, the subcontractor stays pinned left, no console errors. Expired rows' Expiration hint shortened to "N days ago" (Status already says "No longer active"). Scrollbars: P-030 / F-051.

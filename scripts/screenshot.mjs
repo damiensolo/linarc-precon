@@ -20,7 +20,8 @@ const EDGE =
 const widths = widthsArg.split(',').map(Number);
 fs.mkdirSync(outDir, { recursive: true });
 
-const browser = await puppeteer.launch({ executablePath: EDGE, headless: true });
+// Headless Chrome hides scrollbars by default (--hide-scrollbars), so captures never showed them (F-051). Keep them.
+const browser = await puppeteer.launch({ executablePath: EDGE, headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
 let failed = false;
 try {
   for (const width of widths) {

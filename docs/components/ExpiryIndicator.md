@@ -44,6 +44,7 @@ Date format follows the library's `$moment` locale ("30 Sep 2027"); the relative
 - `variant="timeline"`: "Expires 20 Oct 2026 · in 12 days" over a ProgressBar `bar-only` (start → expiry, filled to today). The bar replaces the dot (one colour signal). Without `startDate` it renders the text only and wraps, which is how the record's key facts use it.
 - Bar fill: **current = `surface/warning-neutral`**, expiring = `surface/warning-low`, expired = `surface/error/default`. The spec says green for current; D-17 keeps colour for states that need action. **The user accepted the neutral bar for now (2026-10-09).** In light mode the neutral fill reads heavier than the yellow; a lighter neutral progress fill is needed (needs-token).
 - Date-only strings (`YYYY-MM-DD`) are read as local midnight (F-049); the library version must keep this.
+- Expired hint is "N days ago" in both variants (2026-10-09): the status shown beside it already says "No longer active", so repeating it cost ~110px per table cell.
 
 ## Open questions for design
 - Yellow vs orange for the expiring window; the PRD UX uses both words.

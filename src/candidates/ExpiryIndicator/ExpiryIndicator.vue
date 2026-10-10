@@ -32,7 +32,6 @@
 <script>
 import StatusIndicator from '@/componentsV2/StatusIndicator/StatusIndicator.vue';
 import ProgressBar from '@/components/ProgressBar/ProgressBar.vue';
-import { LIFECYCLE } from '~/modules/prequal/status';
 
 const DAY = 24 * 60 * 60 * 1000;
 // A date-only ISO string ("2026-10-20") parses as UTC midnight, which is the previous day west of UTC. Read it as
@@ -101,7 +100,8 @@ export default {
       if (d === null) return '';
       if (d < 0) {
         const ago = `${-d} day${d === -1 ? '' : 's'} ago`;
-        return this.variant === 'timeline' ? ago : `${LIFECYCLE.expired.label.toLowerCase()} · ${ago}`;
+        // The status beside it already says "No longer active"; the past date in red + "N days ago" carries the state.
+        return ago;
       }
       if (d === 0) return 'expires today';
       if (this.state === 'expiring') return `in ${d} day${d === 1 ? '' : 's'}`;

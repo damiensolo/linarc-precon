@@ -33,15 +33,15 @@ const BLANK = { type: 'text', componentProps: { value: '' } };
  */
 export function requestColumns(role, onOpen) {
   const cols = [
-    { field: 'companyName', label: 'SUBCONTRACTOR', type: 'ShortText', width: 250, readonly: true, frozen: true },
-    { field: 'trade', label: 'TRADE', type: 'ShortText', width: 140, readonly: true },
-    { field: 'project', label: 'PROJECT', type: 'ShortText', width: 170, readonly: true },
-    { field: 'templateName', label: 'TEMPLATE', type: 'ShortText', width: 230, readonly: true },
+    { field: 'companyName', label: 'SUBCONTRACTOR', type: 'ShortText', width: 210, readonly: true, frozen: true },
+    { field: 'trade', label: 'TRADE', type: 'ShortText', width: 130, readonly: true },
+    { field: 'project', label: 'PROJECT', type: 'ShortText', width: 155, readonly: true },
+    { field: 'templateName', label: 'TEMPLATE', type: 'ShortText', width: 210, readonly: true },
     {
       field: 'statusLabel',
       label: 'STATUS',
       type: 'ShortText',
-      width: 290,
+      width: 275,
       readonly: true,
       cell: {
         left: {
@@ -57,7 +57,7 @@ export function requestColumns(role, onOpen) {
       field: 'score',
       label: 'SCORE · CONFIDENCE',
       type: 'ShortText',
-      width: 170,
+      width: 150,
       readonly: true,
       cell: {
         left: { type: 'score-confidence', componentProps: { score: (r) => r.score, confidence: (r) => r.confidence, recommendation: (r) => r.recommendation } },
@@ -66,13 +66,16 @@ export function requestColumns(role, onOpen) {
     });
   }
   cols.push(
-    { field: 'validUntil', label: 'EXPIRATION', type: 'ShortText', width: 220, readonly: true, cell: { left: { type: 'expiry', componentProps: { date: (r) => r.validUntil, now: TODAY } }, center: BLANK } },
-    { field: 'activityText', label: 'LAST ACTIVITY', type: 'ShortText', width: 300, flex: 1, readonly: true },
+    { field: 'validUntil', label: 'EXPIRATION', type: 'ShortText', width: 190, readonly: true, cell: { left: { type: 'expiry', componentProps: { date: (r) => r.validUntil, now: TODAY } }, center: BLANK } },
+    { field: 'activityText', label: 'LAST ACTIVITY', type: 'ShortText', width: 180, flex: 1, readonly: true },
     {
+      // Pinned to the right edge (DataGrid's `Actions` type + `frozen` is sticky right in list and grid views), so the
+      // row action stays visible when the table scrolls sideways. The `cell` button still renders (cell wins over type).
       field: 'action',
       label: '',
-      type: 'ShortText',
-      width: 130,
+      type: 'Actions',
+      frozen: true,
+      width: 110,
       readonly: true,
       cell: { center: BLANK, right: { type: 'button', componentProps: { label: actionLabel, variant: 'text', colorScheme: 'primary', size: 'small' }, onClick: onOpen } },
     },

@@ -37,6 +37,13 @@ Each check below has caught a real bug that the previous check missed. Run them 
 
 When a result looks wrong, check the tool before the UI. F-010: headless Edge quietly ignored the requested window width.
 
+## Scrollbars (added 2026-10-09, F-051)
+Headless Chrome hides scrollbars unless told not to; `yarn shot` now keeps them. When reviewing captures, check every scroll area at a height that makes it scroll (e.g. `yarn shot <slug> <out> 5173 1440 900`): thin rounded thumb, no arrow buttons, and content ending ≥ 16px before the bar. To measure: `el.offsetWidth - el.clientWidth` is the bar width; the gap is the scrollport's inner right edge minus the rightmost child's right edge.
+
+**Unwanted scroll axes (F-052).** A strip that should only scroll sideways (tabs, toolbars) must have `scrollHeight === clientHeight`. `overflow-y: hidden` hides the overflow but doesn't fix it; Windows Edge still showed a bar. Find the overlap (negative margins, borders drawn twice) and remove it.
+
+**Pixel-snapped centring (F-052).** Badges, icons and digits centred with `absolute` + `translate(-50%)` drift off-centre on half-pixel rows: the translated box isn't snapped, but its text is. Use flex centring, then check that the child's centre equals the parent's centre at 1×, 1.25× and 1.5× (`deviceScaleFactor`).
+
 ## State-change check (added 2026-10-07, F-029)
 
 Interactive components must not change size or position between states. For each button, tab, chip or input on the page, measure the bounding box at rest, with keyboard focus (Tab, so `:focus-visible` applies) and while pressed (`mouse.down()` without `mouse.up()`). Width, height, x and y must match in all three. Also read `getComputedStyle(el).outlineWidth` / `outlineOffset` to confirm the state stroke is drawn. Pattern: P-015 / F-029 (a puppeteer-core script in the scratchpad, as in the computed-value check).

@@ -30,6 +30,9 @@ Last updated 2026-10-09. Applies to every Prequalification screen and, unless a 
 - **Subsections inside a form get their own 16px bold heading** (repeat / matrix tables use `props.title`), with ~40px between subsections; the 13px form label is not used for a subsection.
 - Responsive from 390 to 1440+: rows that pair text with a chip and an action wrap so the text takes the full width on phones (`w-full sm:w-auto sm:flex-1`).
 
+- **Scroll areas (F-051, P-030):** one scrollbar style everywhere, from the global styles (Figma Scrollbar: thin rounded thumb, no track, no arrows); never style one locally. **Padding goes inside the scrolling element** so the bar sits at the panel's edge and content ends at least 16px (normally 20px) before it: AppLayout does this for `scrollable-content`; a custom scroller (`overflow-y-auto`) gets its own `p-space-20`. No content flush with a scrollbar, no nested vertical scroll areas, and horizontal scrolling only inside data grids. Number columns end with the row's own padding, never at the bar.
+- **Data tables (DataGrid):** size each column to its widest real content plus the cell padding (measure, don't guess); the name column is `frozen` (pinned left) and the row action is a `type: 'Actions'`, `frozen: true` column (pinned right), so the action stays visible when a wide table scrolls sideways. Don't repeat in one cell what another column already says (e.g. Expiration doesn't restate "No longer active").
+
 ## 3. Containers, lines, colour, icons (D-17)
 
 - **One container level per view.** Lists are rows divided by 1px `border-border-subtle` hairlines; the list has no outline of its own. Never a card inside a card. Use FormV2 `flat` (P-021) when the form is the page.

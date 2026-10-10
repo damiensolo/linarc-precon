@@ -425,3 +425,19 @@ Why it mattered: a variable-by-variable audit can't see a right variable in the 
 How it was caught: the Dark copies of the screen references, three times, before it was fixed.
 What changed: the 12 Solid variants' labels now use `text/default`, matching the Outline variants and the code (P-029). Audit idea for later: for each component variant, resolve the text colour against its own background in both modes and check contrast (≥ 4.5:1), rather than checking variables alone.
 Case study: Y. Variable audits and binding audits catch different bugs.
+
+## F-051 · 2026-10-09 · Default scrollbars, content touching them, and screenshots that hid both
+Tags: design-system, figma, verification
+What happened: the user saw grey 15px scrollbars with arrow buttons across the screens, and numbers and controls pressed against them. Three causes: (1) Figma's Scrollbar component (thin rounded thumb) is meant to be "applied by the global scrollbar styles", but the code had none, so browsers drew their default; (2) AppLayout put its 20px padding outside the scrolling element, so the scrollbar sat inside the padding, flush with the content; (3) TabNavigation's −1px tab margin made the tab strip scroll 1px vertically.
+Why it mattered: it read as unfinished UI on every screen, and no check caught it.
+How it was caught: by the user, in their own browser. Headless Chrome launches with `--hide-scrollbars`, so all `yarn shot` captures were scrollbar-free; the verification never saw what users see.
+What changed: P-030 (global styles from the Figma Scrollbar, padding inside AppLayout's scrollport, tab strip overflow). `scripts/screenshot.mjs` now keeps scrollbars (`ignoreDefaultArgs: ['--hide-scrollbars']`). Measured after: scrollbar 8px, content ends 20px before it on review and record. New rule in docs/5-ui-patterns.md §2: padding sits inside scroll areas; content never touches a scrollbar.
+Case study: Y. The test browser hid a whole class of defect; verify the verifier again.
+
+## F-052 · 2026-10-09 · Hiding overflow and translate-centring both looked fine in headless Chrome and broke on Windows
+Tags: design-system, tooling
+What happened: on the review screen the tab strip showed a vertical scrollbar and the count badges' digits sat off-centre, both in the user's Edge. (1) The tabs overlapped the strip's own bottom border by 1px (`-mb-px`), so the strip had 1px of vertical overflow. An earlier fix (P-030) hid it with `overflow-y-hidden`, but the scrollbar still showed. (2) StatusIndicator centred the badge circle with `absolute` + `translate(-50%)`. Transformed boxes aren't pixel-snapped and text is, so on a half-pixel row the circle and its digit drifted about 1px apart.
+Why it mattered: both are the "looks cheap" kind of defect, in components used across the module (tabs, top-nav notifications, stepper).
+How it was caught: the user's screenshot. Headless Chrome uses overlay scrollbars, so `yarn shot` can't show (1). Measuring `scrollHeight` against `clientHeight`, and the circle's `y` (297.5), found both.
+What changed: P-031. The overlap was removed rather than hidden; the badge is flex-centred, and the digit's box is trimmed to cap height. Verification gains two checks: any `overflow-*` container must have `scrollHeight == clientHeight` on the axis that shouldn't scroll, and centred badges and icons must not use translate. Edge still won't launch for puppeteer (F-041), so these checks ran in installed Chrome (`EDGE_PATH` can point at it).
+Case study: Y. Fix overflow at its source, don't hide it; and headless screenshots won't show the user's scrollbars, so measure them.
