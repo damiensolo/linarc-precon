@@ -1,9 +1,14 @@
-// PLACEHOLDER DATA — GC Review Dashboard (screen 5) for req-001: Apex Electrical, Inc. on Harbor Point Clinic,
+// PLACEHOLDER DATA — GC Review Dashboard (screen 5). `reviewFor(id)` serves every request with a submission: req-001
+// (Apex, below, the first review built) and the others in ./dossiers.js. Requests not yet submitted have no review;
+// the screen shows their tracking view instead (./tracking.js).
+// req-001: Apex Electrical, Inc. on Harbor Point Clinic,
 // Electrical — Medium Projects v3, under review by Jordan Lee. Matches the request row in ./index.js (score 72,
 // confidence 64%, recommendation Review, 0 knockouts, 4 findings, checks 12 of 14). Section scores are weighted with
 // the spec's default weights so they add up to the overall score (≈ 72). "Today" is 2026-10-08.
 // Proof levels (status.js PROOF): declared / evidenced / verified / contradicted. Severity (SEVERITY): knockout /
 // missing / finding / info. Resolution: unresolved / resolved / dismissed / overridden.
+
+import { dossierFor } from './dossiers';
 
 export const REVIEW_ID = 'req-001';
 
@@ -186,3 +191,38 @@ export const CONDITIONS = [
   { id: 'retainage', label: 'Increased retainage (10%)' },
   { id: 'joint', label: 'Joint check agreement for major suppliers' },
 ];
+
+/** Decision-panel starting values for Apex (see ./dossiers.js for the shape). */
+const APEX_DEFAULTS = {
+  primary: 'conditions',
+  trades: ['Electrical', 'Low Voltage', 'Fire Alarm'],
+  validUntil: '2027-03-31',
+  validUntilHelp: 'Earliest key-document expiry (COI, 31 Mar 2027)',
+  conditions: ['umbrella'],
+  infoMessage: 'Please upload a corrected certificate of insurance showing $5,000,000 umbrella coverage, and confirm your current bonding backlog.',
+};
+
+/**
+ * The review for a request id: { context, lintelSummary, sectionScores, findings, checks, documents, submission,
+ * history, conditions, defaults, infoRequest, decided }, fresh copies the screen may mutate. Null when the request has
+ * no submission.
+ */
+export function reviewFor(requestId) {
+  if (requestId === REVIEW_ID) {
+    return {
+      context,
+      lintelSummary,
+      sectionScores,
+      findings: findings.map((f) => ({ ...f })),
+      checks,
+      documents,
+      submission,
+      history: [...history],
+      conditions: CONDITIONS,
+      defaults: APEX_DEFAULTS,
+      infoRequest: null,
+      decided: null,
+    };
+  }
+  return dossierFor(requestId);
+}

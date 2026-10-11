@@ -50,6 +50,10 @@ For any screen that loads data through `createLoad` (`docs/5-ui-patterns.md` §6
 
 **Navigation:** a link between screens must not reload. Set `window.__same = 1`, click, and check it survives; a CDP screencast (`Page.startScreencast`) of the click should have no frame where the top nav is blank.
 
+## Half-pixel check (added 2026-10-11, F-060)
+
+When a fixed-size item (badge, icon button) is centred in a box that has a CSS border, measure its `getBoundingClientRect().top` relative to the box at `deviceScaleFactor` 1 and 1.25, in every state. A fractional top (15.5) means a blurred edge and a digit or glyph that snaps apart from its container. Figma strokes take no layout space, so draw such lines as inset box-shadows or outlines, not borders. 2x screenshots hide this.
+
 ## State-change check (added 2026-10-07, F-029)
 
 Interactive components must not change size or position between states. For each button, tab, chip or input on the page, measure the bounding box at rest, with keyboard focus (Tab, so `:focus-visible` applies) and while pressed (`mouse.down()` without `mouse.up()`). Width, height, x and y must match in all three. Also read `getComputedStyle(el).outlineWidth` / `outlineOffset` to confirm the state stroke is drawn. Pattern: P-015 / F-029 (a puppeteer-core script in the scratchpad, as in the computed-value check).

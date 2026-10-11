@@ -1,20 +1,52 @@
 <template>
   <!-- Sticky decision panel (right panel): what's left before a decision, the four decisions, request context and
        recent activity. Approve with conditions and Request information open a short form in the panel, then a
-       confirmation preview; nothing is sent until Confirm. Linarc recommends; the reviewer decides. -->
+       confirmation preview; nothing is sent until Confirm. Linarc recommends; the reviewer decides.
+       Submits are honest (docs/5-ui-patterns.md §6): Confirm / Send request / Reject request run a (mock) request; the
+       buttons disable at once (a second click does nothing), "Saving…" / "Sending…" shows only after 200ms, the Done
+       state only after the request resolves, and a failure keeps the form with an error and Retry. The state line is
+       the shared LoadStatus on action controllers (createLoad `action`); it sits after the form, outside the mode
+       switch, so its live region survives the switch to Done and says "Decision saved" / "Information request sent".
+       Per request (2026-10-11): the starting values (trades, limits, valid until, preselected conditions, message) come
+       from the review's `defaults`; the solid button follows the recommendation (`defaults.primary`). A decided request
+       shows its decision read-only (`decided`); one waiting on the sub shows what was asked and when (`infoRequest`),
+       and the reviewer can still decide. -->
   <div class="flex flex-col gap-space-24 font-label">
+    <!-- Decided: read-only -->
+    <section v-if="decided" class="flex flex-col gap-space-12">
+      <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Decision</h2>
+      <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ decidedSentence }}</p>
+      <dl class="m-0 flex flex-col divide-y divide-border-subtle text-fontsize-14 leading-lineheight-20">
+        <div v-for="r in decidedRows" :key="r[0]" class="flex flex-col gap-space-2 py-space-8"><dt class="text-fontsize-12 leading-lineheight-16 text-text-subtle">{{ r[0] }}</dt><dd class="m-0 text-text-default">{{ r[1] }}</dd></div>
+      </dl>
+      <div class="flex flex-wrap gap-space-8">
+        <Button v-if="decided.outcome !== 'not-qualified'" label="View qualification record" color-scheme="primary" variant="solid" size="medium" @onClick="$emit('record')" />
+        <Button :label="backLabel" color-scheme="secondary" variant="outline" size="medium" @onClick="$emit('dashboard')" />
+      </div>
+    </section>
+
     <!-- Done -->
-    <section v-if="mode === 'done'" class="flex flex-col gap-space-12">
+    <section v-else-if="mode === 'done'" class="flex flex-col gap-space-12">
       <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ done.title }}</h2>
       <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ done.body }}</p>
       <div class="flex flex-wrap gap-space-8">
         <Button v-if="done.record" label="View qualification record" color-scheme="primary" variant="solid" size="medium" @onClick="$emit('record')" />
-        <Button label="Back to Overview" color-scheme="secondary" variant="outline" size="medium" @onClick="$emit('dashboard')" />
+        <Button :label="backLabel" color-scheme="secondary" variant="outline" size="medium" @onClick="$emit('dashboard')" />
       </div>
     </section>
 
     <!-- Decide -->
     <template v-else-if="mode === 'decide'">
+      <section v-if="infoRequest" class="flex flex-col gap-space-8">
+        <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Waiting for the subcontractor</h2>
+        <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">
+          {{ infoRequest.by }} asked for {{ requestedItems.length }} item{{ requestedItems.length === 1 ? '' : 's' }} on {{ $moment(infoRequest.on).format('D MMM') }}; due {{ $moment(infoRequest.dueOn).format('D MMM') }}.
+        </p>
+        <ul class="m-0 flex list-none flex-col gap-space-4 p-0 text-fontsize-14 leading-lineheight-20 text-text-default">
+          <li v-for="f in requestedItems" :key="f.id">{{ f.title }}</li>
+        </ul>
+        <p class="m-0 text-fontsize-12 leading-lineheight-16 text-text-subtle">“{{ infoRequest.message }}”</p>
+      </section>
       <section class="flex flex-col gap-space-8">
         <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Decision</h2>
         <ul class="m-0 flex list-none flex-col divide-y divide-border-subtle p-0">
@@ -29,13 +61,8 @@
         </ul>
       </section>
       <section class="flex flex-col gap-space-8">
-        <Button class="w-full" label="Approve with conditions" color-scheme="primary" variant="solid" size="medium" @onClick="mode = 'conditions'" />
-        <Button class="w-full" label="Approve" color-scheme="secondary" variant="outline" size="medium" @onClick="startApprove" />
-        <Button class="w-full" label="Request information" color-scheme="secondary" variant="outline" size="medium" @onClick="mode = 'request'" />
-        <Button class="w-full" label="Reject" color-scheme="secondary" variant="minimal" size="medium" @onClick="mode = 'reject'" />
-        <p class="m-0 text-fontsize-12 leading-lineheight-16 text-text-subtle">
-          Recommended: {{ recommendationLabel }}. The primary action follows the open required item; approving without conditions leaves it unresolved.
-        </p>
+        <Button v-for="a in actions" :key="a.id" class="w-full" :label="a.label" :color-scheme="a.scheme" :variant="a.variant" size="medium" @onClick="act(a.id)" />
+        <p class="m-0 text-fontsize-12 leading-lineheight-16 text-text-subtle">{{ primaryNote }}</p>
       </section>
       <section class="flex flex-col gap-space-8 border-t border-border-subtle pt-space-20">
         <h3 class="m-0 text-fontsize-14 font-bold leading-lineheight-20 text-text-default">Request</h3>
@@ -78,8 +105,8 @@
       </dl>
       <p class="m-0 text-fontsize-12 leading-lineheight-16 text-text-subtle">Creates a qualification record and adds {{ companyName }} to Qualified Subs. Estimators see the status, limits and conditions; not the score or findings.</p>
       <div class="flex flex-wrap gap-space-8">
-        <Button label="Confirm" color-scheme="primary" variant="solid" size="medium" @onClick="finish(confirmFrom)" />
-        <Button label="Back" color-scheme="secondary" variant="outline" size="medium" @onClick="mode = confirmFrom" />
+        <Button label="Confirm" color-scheme="primary" variant="solid" size="medium" :is-disabled="busy" @onClick="finish(confirmFrom)" />
+        <Button label="Back" color-scheme="secondary" variant="outline" size="medium" :is-disabled="busy" @onClick="mode = confirmFrom" />
       </div>
     </section>
 
@@ -88,15 +115,15 @@
       <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Request information</h2>
       <div class="flex flex-col gap-space-8">
         <span class="text-fontsize-14 font-bold leading-lineheight-20 text-text-default">Items to send back</span>
-        <Checkbox v-for="f in openFindings" :key="f.id" :value="infoRequest.items.includes(f.id)" :label="f.title" size="small" @input="toggleItem(f.id, $event)" />
+        <Checkbox v-for="f in openFindings" :key="f.id" :value="infoForm.items.includes(f.id)" :label="f.title" size="small" @input="toggleItem(f.id, $event)" />
       </div>
-      <FormV2 :value="{ message: infoRequest.message }" :schema="messageSchema" :flat="true" mode="manual" label-position="top" @input="infoRequest.message = $event.message">
+      <FormV2 :value="{ message: infoForm.message }" :schema="messageSchema" :flat="true" mode="manual" label-position="top" @input="infoForm.message = $event.message">
         <template #footer><span /></template>
       </FormV2>
       <p class="m-0 text-fontsize-12 leading-lineheight-16 text-text-subtle">The subcontractor sees the items and your message, not check results.</p>
       <div class="flex flex-wrap gap-space-8">
-        <Button label="Send request" color-scheme="primary" variant="solid" size="medium" :is-disabled="!infoRequest.items.length" @onClick="finish('request')" />
-        <Button label="Cancel" color-scheme="secondary" variant="minimal" size="medium" @onClick="mode = 'decide'" />
+        <Button label="Send request" color-scheme="primary" variant="solid" size="medium" :is-disabled="!infoForm.items.length || busy" @onClick="finish('request')" />
+        <Button label="Cancel" color-scheme="secondary" variant="minimal" size="medium" :is-disabled="busy" @onClick="mode = 'decide'" />
       </div>
     </section>
 
@@ -107,10 +134,16 @@
         <template #footer><span /></template>
       </FormV2>
       <div class="flex flex-wrap gap-space-8">
-        <Button label="Reject request" color-scheme="primary" variant="solid" size="medium" :is-disabled="!rejection.reason" @onClick="finish('reject')" />
-        <Button label="Cancel" color-scheme="secondary" variant="minimal" size="medium" @onClick="mode = 'decide'" />
+        <Button label="Reject request" color-scheme="primary" variant="solid" size="medium" :is-disabled="!rejection.reason || busy" @onClick="finish('reject')" />
+        <Button label="Cancel" color-scheme="secondary" variant="minimal" size="medium" :is-disabled="busy" @onClick="mode = 'decide'" />
       </div>
     </section>
+
+    <!-- The submitted form's state (Saving… / Sending…, or the error + Retry). -mt-space-8: 16px under the form's
+         buttons, as inside the form (the panel's own gap is 24). -->
+    <div v-if="submitted" class="-mt-space-8 flex flex-col">
+      <LoadStatus :load="submitLoad" variant="notice" @retry="finish(submitted)" />
+    </div>
   </div>
 </template>
 
@@ -121,10 +154,13 @@ import Checkbox from '@/components/Checkbox/Checkbox.vue';
 import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import { RECOMMENDATION } from '~/modules/prequal/status';
 import { currency } from '~/candidates/FormTableFields/format';
+import { createLoad } from '~/candidates/LoadRegion/createLoad';
+import { mockRequest } from '~/modules/mock/request';
+import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
 
 export default {
   name: 'DecisionPanel',
-  components: { Check, Button, Checkbox, FormV2 },
+  components: { Check, Button, Checkbox, FormV2, LoadStatus },
   props: {
     request: { type: Object, required: true },
     companyName: { type: String, required: true },
@@ -136,24 +172,42 @@ export default {
     context: { type: Object, required: true },
     /** Pre-selects a finding when "Request information" comes from the evidence panel. */
     requestFor: { type: String, default: null },
+    /** Starting values for this request: { primary, trades, validUntil, validUntilHelp, conditions, infoMessage, rejectReason }. */
+    defaults: { type: Object, default: () => ({}) },
+    /** An open information request: { on, by, dueOn, items: [finding ids], message }. */
+    infoRequest: { type: Object, default: null },
+    /** A decision already made (closed request): { outcome, by, on, trades, validUntil, conditions } or { outcome, by, on, reason, message }. */
+    decided: { type: Object, default: null },
+    backLabel: { type: String, default: 'Back to Review Queue' },
   },
   data() {
     return {
       mode: 'decide',
       confirmFrom: 'conditions',
       done: null,
-      approval: { trades: [this.trade], single: this.request.single, aggregate: this.request.aggregate, validUntil: '2027-03-31', conditions: ['umbrella'] },
-      infoRequest: { items: [], message: 'Please upload a corrected certificate of insurance showing $5,000,000 umbrella coverage, and confirm your current bonding backlog.' },
-      rejection: { reason: '', message: '' },
+      /** The decision being (or last) submitted; its state shows under the form. Cleared when the form changes. */
+      submitted: null,
+      /** Approve / approve with conditions / reject save a decision; Request information sends a request. */
+      decisionLoad: createLoad({ label: 'decision', action: { busy: 'Saving', done: 'Saved', error: "Couldn't save the decision. Nothing was changed." } }),
+      requestLoad: createLoad({ label: 'information request', action: { busy: 'Sending', done: 'Sent', error: "Couldn't send the request. Nothing was sent." } }),
+      approval: {
+        trades: [(this.defaults.trades || [this.trade])[0]],
+        single: this.request.single,
+        aggregate: this.request.aggregate,
+        validUntil: this.defaults.validUntil || '',
+        conditions: [...(this.defaults.conditions || [])],
+      },
+      infoForm: { items: [], message: this.defaults.infoMessage || '' },
+      rejection: { reason: this.defaults.rejectReason || '', message: '' },
       approvalSchema: {
         sections: [{
           id: 'approval',
           layout: { columns: 1, gap: '16px' },
           fields: [
-            { id: 'trades', type: 'multiselect', label: 'Qualified trades', options: [this.trade, 'Low Voltage', 'Fire Alarm'].map((t) => ({ label: t, value: t })) },
+            { id: 'trades', type: 'multiselect', label: 'Qualified trades', options: (this.defaults.trades || [this.trade]).map((t) => ({ label: t, value: t })) },
             { id: 'single', type: 'number', label: 'Single-project limit' },
             { id: 'aggregate', type: 'number', label: 'Aggregate limit' },
-            { id: 'validUntil', type: 'text', label: 'Valid until', help: 'Earliest key-document expiry (COI, 31 Mar 2027)' },
+            { id: 'validUntil', type: 'text', label: 'Valid until', help: this.defaults.validUntilHelp || 'Earliest key-document expiry' },
           ],
         }],
       },
@@ -163,7 +217,7 @@ export default {
           id: 'reject',
           layout: { columns: 1, gap: '16px' },
           fields: [
-            { id: 'reason', type: 'select', label: 'Reason', options: ['Insurance below requirements', 'Insufficient bonding capacity', 'Safety record', 'Other'].map((t) => ({ label: t, value: t })) },
+            { id: 'reason', type: 'select', label: 'Reason', options: ['Debarment (knockout)', 'Insurance below requirements', 'Insufficient bonding capacity', 'Safety record', 'Other'].map((t) => ({ label: t, value: t })) },
             { id: 'message', type: 'textarea', label: 'Explanation the subcontractor sees', props: { rows: 3 } },
           ],
         }],
@@ -171,12 +225,64 @@ export default {
     };
   },
   computed: {
+    busy() {
+      return this.decisionLoad.status === 'loading' || this.requestLoad.status === 'loading';
+    },
+    submitLoad() {
+      return this.submitted === 'request' ? this.requestLoad : this.decisionLoad;
+    },
     openFindings() {
       return this.findings.filter((f) => f.resolution === 'unresolved' && f.severity !== 'info');
     },
     recommendationLabel() {
       const r = RECOMMENDATION[this.request.recommendation];
       return r ? r.label : '—';
+    },
+    /** The four decisions in a fixed order; only the one the recommendation points to is solid. */
+    actions() {
+      const primary = this.defaults.primary || 'conditions';
+      const rest = { conditions: 'outline', approve: 'outline', request: 'outline', reject: 'minimal' };
+      return [
+        ['conditions', 'Approve with conditions'],
+        ['approve', 'Approve'],
+        ['request', 'Request information'],
+        ['reject', 'Reject'],
+      ].map(([id, label]) => (id === primary
+        ? { id, label, scheme: 'primary', variant: 'solid' }
+        : { id, label, scheme: 'secondary', variant: rest[id] }));
+    },
+    primaryNote() {
+      const rec = `Recommended: ${this.recommendationLabel}.`;
+      switch (this.defaults.primary) {
+        case 'approve':
+          return `${rec} Nothing required is open, so the primary action is Approve.`;
+        case 'reject':
+          return `${rec} A confirmed knockout is open; it can only be approved if the match is dismissed.`;
+        case 'request':
+          return `${rec} Required items are missing or unverified, so the primary action asks the subcontractor for them.`;
+        default:
+          return `${rec} The primary action follows the open required item; approving without conditions leaves it unresolved.`;
+      }
+    },
+    requestedItems() {
+      if (!this.infoRequest) return [];
+      return this.infoRequest.items.map((id) => this.findings.find((f) => f.id === id)).filter(Boolean);
+    },
+    decidedSentence() {
+      const d = this.decided;
+      const on = this.$moment(d.on).format('D MMM YYYY');
+      if (d.outcome === 'not-qualified') return `Not approved by ${d.by} on ${on}.`;
+      const what = d.outcome === 'qualified-with-conditions' ? 'Approved with conditions' : 'Approved';
+      return `${what} by ${d.by} on ${on}. The qualification record carries what happened since.`;
+    },
+    decidedRows() {
+      const d = this.decided;
+      if (d.outcome === 'not-qualified') return [['Reason', d.reason], ['Told the subcontractor', d.message]];
+      return [
+        ['Qualified trades', d.trades.map((t) => `${t.trade} (${currency(t.single)} / ${currency(t.aggregate)})`).join(' · ')],
+        ['Valid until', this.$moment(d.validUntil).format('D MMM YYYY')],
+        ['Conditions', d.conditions.length ? d.conditions.map((c) => c.label).join('; ') : 'None'],
+      ];
     },
     readiness() {
       const running = this.checks.filter((k) => k.status === 'running');
@@ -212,16 +318,28 @@ export default {
     },
   },
   watch: {
+    mode(m) {
+      // Kept on Done, so the confirmation is announced by the same live region that announced "Saving…".
+      if (!this.busy && m !== 'done') this.submitted = null;
+    },
     requestFor: {
       immediate: true,
       handler(id) {
         if (!id) return;
-        this.infoRequest.items = [id];
+        this.infoForm.items = [id];
         this.mode = 'request';
       },
     },
   },
+  beforeDestroy() {
+    this.decisionLoad.destroy();
+    this.requestLoad.destroy();
+  },
   methods: {
+    act(id) {
+      if (id === 'approve') this.startApprove();
+      else this.mode = id;
+    },
     startApprove() {
       this.approval.conditions = [];
       this.mode = 'approve';
@@ -231,19 +349,27 @@ export default {
       this.approval.conditions = on ? [...new Set([...c, id])] : c.filter((x) => x !== id);
     },
     toggleItem(id, on) {
-      const c = this.infoRequest.items;
-      this.infoRequest.items = on ? [...new Set([...c, id])] : c.filter((x) => x !== id);
+      const c = this.infoForm.items;
+      this.infoForm.items = on ? [...new Set([...c, id])] : c.filter((x) => x !== id);
     },
     finish(kind) {
       const DONE = {
         conditions: { title: 'Approved with conditions', body: `${this.companyName} is qualified with conditions until ${this.$moment(this.approval.validUntil).format('D MMM YYYY')}.`, record: true },
         approve: { title: 'Approved', body: `${this.companyName} is qualified until ${this.$moment(this.approval.validUntil).format('D MMM YYYY')}.`, record: true },
-        request: { title: 'Information requested', body: `${this.infoRequest.items.length} item(s) sent to ${this.companyName}. The request moves to “More information needed”.`, record: false },
+        request: { title: 'Information requested', body: `${this.infoForm.items.length} item(s) sent to ${this.companyName}. The request moves to “More information needed”.`, record: false },
         reject: { title: 'Not approved', body: `${this.companyName} has been told: ${this.rejection.reason}.`, record: false },
       };
-      this.done = DONE[kind];
-      this.mode = 'done';
-      this.$emit('decided', kind);
+      // A second click while the first is in flight does nothing (the button is disabled on the next frame).
+      if (this.busy) return;
+      this.submitted = kind;
+      this.submitLoad.run(
+        (signal) => mockRequest(() => kind, { signal }),
+        () => {
+          this.done = DONE[kind];
+          this.mode = 'done';
+          this.$emit('decided', kind);
+        },
+      );
     },
   },
 };

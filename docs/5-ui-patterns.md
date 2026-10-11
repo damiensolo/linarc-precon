@@ -48,6 +48,7 @@ Last updated 2026-10-10. Applies to every Prequalification screen and, unless a 
 | Multi-value select (trades, regions, sectors) | **SelectV2 `multiple`** (P-024) = Figma Select Menu `Type=Tags` (P-023); FormV2 `multiselect` renders it | FormV2's old hand-rolled chip select (removed, F-039) |
 | Step progress | **ProgressStepper** (P-025) | custom dots / numbered lists |
 | Create-screen header | Title Bar / Workflow pattern through `PrequalShell` `#header` | Title Bar / Page with a back button added by hand |
+| Back button in a title bar (detail and create screens) | **HeaderToolIcon `type="back"`** + `PrequalShell header-size="comfortable"` (Title Bar / Workflow `Size=Comfortable`, D-25, P-038) | a minimal Button with a chevron (doesn't read as a button) |
 | Step navigation bar | AppLayout bottom panel (`PrequalShell` `bottom-panel`) | buttons at the end of a long scroll |
 | Page sections as tabs | **TabNavigation** (P-028) | SegmentedControl (that's for view modes) |
 | A value compared across sources | **EvidenceComparison** (candidate) | ad-hoc tables |
@@ -62,7 +63,6 @@ Last updated 2026-10-10. Applies to every Prequalification screen and, unless a 
 - Figma Modal has no wide size; Title Bar / Workflow has no module-neutral Create variant (needs-figma).
 - No content-width token: the form columns use Tailwind `max-w-4xl` / `max-w-3xl` (needs-token: `layout/form-wide`, `layout/form`).
 - ProgressStepper active label is bold in code, Regular in Figma (P-025, for design).
-- Figma's skeleton (Data Table / Sheet Cell `Type=Skeleton Loader`) is bound to `surface/neutral`, which is the same colour as the table row in Dark mode (#1e1e1e on #1e1e1e): placeholders vanish, and under reduced motion (no shimmer) nothing shows at all. Code keeps the Figma binding (D-14). Proposal: `surface/subtle` (light #f4f4f5, dark 5% white) or a new `surface/skeleton` token (needs-design, P-034, F-058).
 - No motion tokens (duration, easing) exist in Figma or `tokens.css`; the loading timings in §6 are CSS custom properties and JS constants until they do (needs-token).
 
 ## 6. Navigation, loading and transitions (D-24)
@@ -92,7 +92,7 @@ The goal is an interface that answers every action at once and makes waiting cal
 
 ### Acknowledge, and never double-submit
 
-- The control the user touched changes **at once**: the segmented filter selects, the rail item highlights, a submit button is disabled (`is-disabled` while `load.status === 'loading'`) before the request starts, so a second click does nothing. (Button has no busy/spinner state in code; check Figma's Button before adding one.)
+- The control the user touched changes **at once**: the segmented filter selects, the rail item highlights, a submit button is disabled (`is-disabled` while `load.status === 'loading'`) before the request starts, so a second click does nothing. (Figma's Button has `Type=Spinner-*` busy types; code doesn't yet, P-036.)
 - **Latest request wins.** A new request (another filter, a retry) supersedes the running one; the old answer is ignored when it arrives, never applied (`createLoad` does this). An indicator already showing stays on across superseding requests (no off-and-on flicker).
 
 ### Honest states, always ending
@@ -108,6 +108,12 @@ The goal is an interface that answers every action at once and makes waiting cal
 - One polite live region per loading region announces **meaningful changes only**: "Loading review queue…" (only once the indicator shows), "Still loading…", "Review queue loaded" (only if the start was announced). Never per animation cycle. Errors use `role="alert"`.
 - Skeletons are `aria-hidden`.
 - **`prefers-reduced-motion: reduce`:** skeletons are static (no shimmer), content appears without the fade. (The library spinner still rotates; flagged.)
+
+### Tokens and Figma
+
+- Placeholder fill **`surface/skeleton`** (Light gray/100, Dark gray/800), shimmer band **`surface/skeleton-highlight`** (gray/50, gray/700); Tailwind `bg-surface-skeleton`. Never `surface/neutral` for a placeholder: in Dark it equals the table row (P-035).
+- Figma: **Skeleton**, **Load Status** and **Load Region** are candidate components on the design system's `_Candidates` page (40024347:89, :169, :224); tables use Data Table / Sheet Cell `Type=Skeleton Loader`. Draw screens' loading states from these instances.
+- Submit buttons: Figma's Button has `Type=Spinner-*` busy types; code has no busy state yet (P-036), so code disables the button while sending.
 
 ### How to build it
 
@@ -128,8 +134,22 @@ fetch() {
 <LoadRegion v-slot="{ skeleton }" :load="load" content-loads @retry="fetch">
   <DataGrid :data="rows" :loading="skeleton" … />                      <!-- tables: DataGrid's own skeleton rows -->
 </LoadRegion>
-<!-- Other layouts: <LoadRegion :load="load"> content <template #skeleton> <Skeleton … /> rows </template> -->
+<!-- Other layouts: <LoadRegion :load="load"> <template #default>content</template> <template #skeleton> <Skeleton … /> rows </template> -->
+<!-- A second region of the same load (right panel, nav): <LoadRegion secondary :load="load"> -->
 ```
+
+```js
+// A write: same controller, action wording; the button disables while load.status === 'loading'
+save: createLoad({ label: 'changes', action: { busy: 'Saving', done: 'Saved', error: "Couldn't save." } }),
+```
+
+```vue
+<LoadStatus :load="save" @retry="onSave">Saved {{ savedAgo }}</LoadStatus>   <!-- "Saving…" after 200ms; error + Retry; announces "Changes saved" -->
+<LoadStatus :load="send" variant="notice" @retry="send" />                    <!-- form-level failure as an InlineNotice -->
+```
+
+- Put LoadRegion content in `<template #default>`: plain slot children are evaluated by the page at once and throw while the data is still null.
+- KPI cards: `<KpiCard loading>` (value and hint become skeletons; the label stays).
 
 - **Reviewing loading states:** prototype data is static and answers instantly. The sandbox header's **Latency** select (or `?latency=fast|medium|slow|fail|fail-once`) delays or fails the mock request (`src/modules/mock/request.js`). Reference implementation: `prequal-queue`.
 

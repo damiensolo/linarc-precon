@@ -4,10 +4,9 @@
 // Awaiting subcontractor, Checks pending, Assigned to me. Only requests with a submission are in the queue.
 import './gridSlots';
 import { requestGridRows, actionLabel, subcontractorColumn, actionColumn, BLANK } from './requestColumns';
-import { RECOMMENDATION, WORKFLOW, toneToChipStatus } from './status';
+import { QUEUE_STAGES, RECOMMENDATION, WORKFLOW, toneToChipStatus } from './status';
 
-/** Workflow stages that put a request in the queue (PRD: Submitted, Info Requested, Under Review). */
-export const QUEUE_STAGES = ['submitted', 'under-review', 'info-requested'];
+export { QUEUE_STAGES };
 
 /** PRD's five quick filters. "Assigned to me" is a separate toggle (see `ME`). */
 export const QUEUE_FILTERS = [

@@ -1,8 +1,9 @@
 <template>
   <!-- CANDIDATE 2026-10-10: proposed design-system component, see docs/components/LoadingStates.md. Not a prototype-local widget.
-       Figma: the bar of Data Table / Sheet Cell Type=Skeleton Loader (40016391:36860): surface/neutral, radius-6, as tall
-       as the line box it stands in for. Code adds a restrained shimmer; static under prefers-reduced-motion. -->
-  <span class="skeleton block shrink-0 bg-surface-neutral" :class="shapeClasses" aria-hidden="true" />
+       Figma: Skeleton on _Candidates (40024347:89), same bar as Data Table / Sheet Cell Type=Skeleton Loader:
+       surface/skeleton, radius-6, as tall as the line box it stands in for. Code adds a restrained shimmer
+       (surface/skeleton-highlight band); static under prefers-reduced-motion. -->
+  <span class="skeleton block shrink-0 bg-surface-skeleton" :class="shapeClasses" aria-hidden="true" />
 </template>
 
 <script>
@@ -31,7 +32,7 @@ export default {
 /* One highlight band sweeps left → right across the viewport; background-attachment: fixed keeps every skeleton on
    the page in phase, so the sweep reads as one light, not many. --skeleton-shimmer-ms is the configurable cycle. */
 .skeleton {
-  background-image: linear-gradient(90deg, var(--surface-neutral) 40%, var(--surface-soft) 50%, var(--surface-neutral) 60%);
+  background-image: linear-gradient(90deg, var(--surface-skeleton) 40%, var(--surface-skeleton-highlight) 50%, var(--surface-skeleton) 60%);
   background-size: 200vw 100%;
   background-attachment: fixed;
   animation: skeleton-shimmer var(--skeleton-shimmer-ms, 1600ms) linear infinite;

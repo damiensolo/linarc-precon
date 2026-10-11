@@ -122,6 +122,9 @@ export function requestStatus(request) {
   return WORKFLOW[request.workflow];
 }
 
+/** Workflow stages that put a request in the Review Queue (PRD: Submitted, Info Requested, Under Review). */
+export const QUEUE_STAGES = Object.freeze(['submitted', 'under-review', 'info-requested']);
+
 /** Dashboard KPIs (docs/prequal/status-model.md › KPI definitions) */
 export const KPI = Object.freeze({
   waitingForSubcontractor: (r) => ['invited', 'in-progress', 'info-requested'].includes(r.workflow),

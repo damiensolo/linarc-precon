@@ -6,9 +6,13 @@
        skeleton was seen. Refresh: content stays; LoadStatus shows the inline indicator. Error or cancel with nothing on
        screen: a notice with Retry. `content-loads`: the content has its own placeholder mode (DataGrid `loading`), so
        it stays mounted, real header and all, and gets `skeleton` (true once the delay passes) through the slot.
-       Rules: docs/5-ui-patterns.md §6. -->
+       `secondary`: another region of the same load (e.g. a right panel): same skeleton and reveal, but no live region
+       and no error notice, so screen readers hear the load once and the failure shows once (in the primary region).
+       Put the content in `<template #default>` (or use v-slot): plain slot children are evaluated by the parent at
+       once and throw while the data is still null; a v-slot template is only evaluated when LoadRegion renders it.
+       Figma: Load Region on _Candidates (40024347:224). Rules: docs/5-ui-patterns.md §6. -->
   <div class="load-region flex min-h-0 flex-col" :aria-busy="load.status === 'loading' ? 'true' : 'false'">
-    <span class="sr-only" role="status" aria-live="polite">{{ load.announcement }}</span>
+    <span v-if="!secondary" class="sr-only" role="status" aria-live="polite">{{ load.announcement }}</span>
 
     <div v-if="load.hasData && !contentLoads" class="flex min-h-0 flex-1 flex-col" :class="{ 'load-region__reveal': load.fromSkeleton }">
       <slot />
@@ -17,7 +21,7 @@
     <template v-else>
       <!-- Failed or stopped with nothing on screen: say so and offer Retry. With content-loads the content (its header,
            its frame) stays below the notice. -->
-      <div v-if="failed" class="flex flex-col" :class="{ 'pb-space-12': contentLoads }">
+      <div v-if="failed && !secondary" class="flex flex-col" :class="{ 'pb-space-12': contentLoads }">
         <slot name="error" :error="load.error" :retry="retry">
           <InlineNotice :tone="load.status === 'error' ? 'error' : 'info'" :message="load.status === 'error' ? `Couldn't load the ${load.label}.` : `Loading stopped.`">
             <template #actions>
@@ -52,6 +56,8 @@ export default {
     load: { type: Object, required: true },
     /** The default slot draws its own placeholders (e.g. DataGrid `:loading="skeleton"`); keep it mounted throughout. */
     contentLoads: { type: Boolean, default: false },
+    /** Another region of a load whose primary LoadRegion announces it and shows its errors. */
+    secondary: { type: Boolean, default: false },
   },
   computed: {
     failed() {

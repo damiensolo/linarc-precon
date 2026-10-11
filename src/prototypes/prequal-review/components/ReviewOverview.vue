@@ -14,7 +14,7 @@
     <section class="flex flex-col gap-space-4" aria-labelledby="priority-h">
       <div class="flex flex-wrap items-baseline justify-between gap-space-8">
         <h2 id="priority-h" class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">
-          Needs your decision <span class="font-normal text-text-soft">{{ priority.length }}</span>
+          {{ heading }} <span class="font-normal text-text-soft">{{ priority.length }}</span>
         </h2>
         <Button :label="`All findings (${total})`" color-scheme="primary" variant="text" size="small" @onClick="$emit('tab', 'findings')" />
       </div>
@@ -48,6 +48,8 @@ export default {
     summary: { type: String, required: true },
     findings: { type: Array, required: true },
     sections: { type: Array, required: true },
+    /** "Needs your decision" while the request is open; a decided review lists what was open at the decision. */
+    heading: { type: String, default: 'Needs your decision' },
   },
   computed: {
     priority() {

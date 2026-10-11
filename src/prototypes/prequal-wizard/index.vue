@@ -5,19 +5,25 @@
        AppLayout #header) above a full-page form. Version B, the same steps in a modal, is `prequal-wizard-modal`.
        Layout (D-18): the stepper and form sit in a centred 56rem column (wide-form width: tables and two-column fields); the fixed footer's buttons align to it.
        Steps and state: ./wizardState.js and ./components/. Visual rules D-17. `#<step id>` opens a step. -->
-  <PrequalShell screen="dashboard" title="New prequalification request" :scrollable-content="true" :bottom-panel="true">
+  <PrequalShell screen="dashboard" header-size="comfortable" title="New prequalification request" :scrollable-content="true" :bottom-panel="true">
     <!-- Title Bar / Workflow, Status=Create: back · title · document ID chip -->
     <template #header>
       <span class="flex min-w-0 items-center gap-space-8">
-        <Button label="" aria-label="Back to Overview" color-scheme="secondary" variant="minimal" size="medium" @onClick="close">
-          <template #leftIcon><ChevronLeft /></template>
-        </Button>
+        <!-- Title Bar / Workflow Size=Comfortable: the back button has a visible container (HeaderToolIcon type="back", P-038). -->
+        <HeaderToolIcon type="back" aria-label="Back to Overview" @click="close" />
         <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">New prequalification request</span>
         <Chip :label="requestId" size="small" fill-style="solid" type="default" :removable="false" class="shrink-0" />
       </span>
     </template>
     <template #header-actions>
-      <span v-if="savedText" class="hidden font-label text-fontsize-12 leading-lineheight-16 text-text-soft sm:inline">{{ savedText }}</span>
+      <!-- Save / send state: LoadStatus on the last action ("…ing" only past 200ms, the error + Retry; wizardState
+           actionLoad). Mounted once there is something to show, visually hidden below sm (still announced) except a
+           failure, which shows at every width. -->
+      <span v-if="savedText || lastAction" class="inline-flex" :class="{ 'sr-only sm:not-sr-only': !actionFailed }">
+        <LoadStatus :load="actionLoad" size="xs" @retry="actionRetry">
+          <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">{{ savedText }}</span>
+        </LoadStatus>
+      </span>
     </template>
 
     <template #content>
@@ -62,8 +68,8 @@
         <footer class="mx-auto flex w-full max-w-4xl items-center justify-between gap-space-12">
           <Button :label="index > 0 ? 'Back' : 'Cancel'" color-scheme="secondary" :variant="index > 0 ? 'outline' : 'minimal'" size="medium" @onClick="back" />
           <div class="flex items-center gap-space-12">
-            <Button label="Save draft" color-scheme="secondary" variant="minimal" size="medium" @onClick="saveDraft" />
-            <Button :label="isLast ? 'Send invite' : 'Next'" color-scheme="primary" variant="solid" size="medium" :is-disabled="!canContinue" @onClick="next" />
+            <Button label="Save draft" color-scheme="secondary" variant="minimal" size="medium" :is-disabled="savingDraft || sending" @onClick="saveDraft" />
+            <Button :label="isLast ? 'Send invite' : 'Next'" color-scheme="primary" variant="solid" size="medium" :is-disabled="!canContinue || sending" @onClick="next" />
           </div>
         </footer>
       </div>
@@ -72,10 +78,11 @@
 </template>
 
 <script>
-import { ChevronLeft } from '@development/linarc-icons';
 import ProgressStepper from '@/componentsV2/ProgressStepper/ProgressStepper.vue';
 import Button from '@/components/Button/Button.vue';
+import HeaderToolIcon from '@/componentsV2/HeaderToolIcon/HeaderToolIcon.vue';
 import Chip from '@/components/Chip/Chip.vue';
+import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
 import PrequalShell from '~/modules/prequal/PrequalShell.vue';
 import StepSubcontractor from './components/StepSubcontractor.vue';
 import StepWork from './components/StepWork.vue';
@@ -90,7 +97,7 @@ export default {
     title: 'Preconstruction › Prequalification › New request',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6836',
   },
-  components: { PrequalShell, ProgressStepper, Button, Chip, ChevronLeft, StepSubcontractor, StepWork, StepRequirements, StepInvite },
+  components: { PrequalShell, ProgressStepper, Button, HeaderToolIcon, Chip, LoadStatus, StepSubcontractor, StepWork, StepRequirements, StepInvite },
   data() {
     // PLACEHOLDER DATA: the next request number after req-024.
     return { requestId: 'REQ-025' };

@@ -15,7 +15,7 @@
         <InlineNotice v-if="!readiness.canSubmit" tone="error" title="Submission is not ready" :message="`Complete the ${readiness.blocking.length} items above first. Flagged and pending items don't stop you from submitting.`" />
         <InlineNotice v-else-if="readiness.flagged.length" tone="warning" title="You can submit with flagged items" message="They will be shown to the reviewer exactly as they appear here. Fix them now if you can; otherwise the reviewer may ask for more information." />
         <div class="flex flex-wrap items-center gap-space-12">
-          <Button label="Submit application" color-scheme="primary" variant="solid" size="medium" :is-disabled="!readiness.canSubmit" @onClick="$emit('submit')" />
+          <Button label="Submit application" color-scheme="primary" variant="solid" size="medium" :is-disabled="!readiness.canSubmit || submitting" @onClick="$emit('submit')" />
           <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">Submitting sends your answers and documents to {{ gcName }}. You can still respond to information requests afterwards.</span>
         </div>
       </section>
@@ -34,6 +34,8 @@ export default {
   props: {
     readiness: { type: Object, required: true },
     submitted: { type: Boolean, default: false },
+    /** The submission request is running: the button stays disabled until it resolves (no double submit). */
+    submitting: { type: Boolean, default: false },
     gcName: { type: String, required: true },
   },
   computed: {

@@ -4,14 +4,19 @@
        Workflow header (back · company · record ID chip · status); the record on the left; the audit trail in AppLayout's
        right panel (activity, as on the RFI screen), inline at the end below 1024px. Request renewal is a short
        single-step task, so it's a ModalV2 (§1). Estimator/PM sees status, trades, limits and conditions only (PRD §10).
-       Data: src/modules/prequal/data/records.js. `#<request id>` picks the record; no hash = Summit (req-021). -->
-  <PrequalShell screen="record" title="Qualification record" :right-panel="isWide && isReviewer" :scrollable-content="true">
+       Data: src/modules/prequal/data/records.js. `#<request id>` picks the record; no hash = Summit (req-021).
+       Loading (docs/5-ui-patterns.md §6): the record comes from a (mock) request. The shell, the back arrow and "View as"
+       stay; the company name, ID chip, status, the record column and the audit trail wait for it, as skeletons in the
+       final layout after 200ms ("Request renewal" stays in place, disabled). Request renewal and Send reminder submit
+       honestly (disabled at once, confirmation only after the answer, error + Retry). Try the sandbox Latency select. -->
+  <PrequalShell screen="record" header-size="comfortable" title="Qualification record" :right-panel="isWide && isReviewer" :scrollable-content="true">
     <template #header>
       <span class="flex min-w-0 items-center gap-space-8">
-        <Button label="" aria-label="Back to Qualified Subs" color-scheme="secondary" variant="minimal" size="medium" @onClick="back">
-          <template #leftIcon><ChevronLeft /></template>
-        </Button>
-        <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ company.name }}</span>
+        <!-- Title Bar / Workflow Size=Comfortable: the back button has a visible container (HeaderToolIcon type="back", P-038). -->
+        <HeaderToolIcon type="back" aria-label="Back to Qualified Subs" @click="back" />
+        <span v-if="load.hasData" class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ company.name }}</span>
+        <!-- The name depends on the record: a title-sized line holds its place (invisible for the first 200ms). -->
+        <Skeleton v-else size="md" class="w-space-124 shrink-0" :class="{ invisible: !load.indicator }" />
         <Chip v-if="record" :label="record.displayId" size="small" fill-style="solid" type="default" :removable="false" class="shrink-0" />
         <span v-if="record" class="hidden items-center gap-space-8 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle md:inline-flex">
           Status:
@@ -25,51 +30,67 @@
         <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-subtle">View as</span>
         <SegmentedControl v-model="role" :options="roleOptions" aria-label="View as" size="md" />
       </span>
+      <!-- Kept in place (disabled) while the record loads, so the title bar doesn't shift when it arrives. -->
       <Button
-        v-if="record && isReviewer"
+        v-if="isReviewer && (record || !load.hasData)"
         label="Request renewal"
         color-scheme="secondary"
         variant="outline"
         size="medium"
+        :is-disabled="!load.hasData"
         @onClick="openRenewal(null)"
       />
     </template>
 
     <template #content>
-      <div class="flex w-full flex-col gap-space-40 pt-space-16 pb-space-24">
-        <!-- No record: the request isn't approved (yet) -->
-        <InlineNotice v-if="!record" tone="info" :title="`${requestLabel} has no qualification record`">
-          A record is created when a reviewer approves the request. Its status is {{ status.label.toLowerCase() }}.
-          <template #actions>
-            <Button :label="openLabel" color-scheme="secondary" variant="outline" size="small" @onClick="openRequest" />
-          </template>
-        </InlineNotice>
+      <LoadRegion class="w-full pt-space-16 pb-space-24" :load="load" @retry="fetch">
+        <!-- v-slot keeps the content lazy: it is only evaluated once the record has arrived. -->
+        <template #default>
+          <div class="flex w-full flex-col gap-space-40">
+            <!-- No record: the request isn't approved (yet) -->
+            <InlineNotice v-if="!record" tone="info" :title="`${requestLabel} has no qualification record`">
+              A record is created when a reviewer approves the request. Its status is {{ status.label.toLowerCase() }}.
+              <template #actions>
+                <Button :label="openLabel" color-scheme="secondary" variant="outline" size="small" @onClick="openRequest" />
+              </template>
+            </InlineNotice>
 
-        <template v-else>
-          <p class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">
-            {{ company.trade }} · CSI {{ company.csi }} · {{ company.state }} · from {{ requestLabel }} ({{ record.project }}) ·
-            {{ record.templateName }} · contact {{ company.contact }}
-          </p>
+            <template v-else>
+              <p class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">
+                {{ company.trade }} · CSI {{ company.csi }} · {{ company.state }} · from {{ requestLabel }} ({{ record.project }}) ·
+                {{ record.templateName }} · contact {{ company.contact }}
+              </p>
 
-          <RecordSummary :record="record" :reviewer="isReviewer" :now="today" :status="status" />
+              <RecordSummary :record="record" :reviewer="isReviewer" :now="today" :status="status" />
 
-          <MonitoringList
-            v-if="isReviewer"
-            :documents="documents"
-            :now="today"
-            :sent="sentNote"
-            @renew="openRenewal"
-            @remind="remind"
-          />
-          <p v-else class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">
-            Documents, scores and the audit trail are visible to prequalification reviewers.
-          </p>
+              <MonitoringList
+                v-if="isReviewer"
+                :documents="documents"
+                :now="today"
+                :sent="sentNote"
+                :pending="reminding"
+                @renew="openRenewal"
+                @remind="remind"
+              >
+                <template #status>
+                  <LoadStatus :load="reminder" :active="!!remindFor" variant="notice" @retry="remind(remindFor)" />
+                </template>
+              </MonitoringList>
+              <p v-else class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">
+                Documents, scores and the audit trail are visible to prequalification reviewers.
+              </p>
 
-          <section v-if="isReviewer && !isWide" class="border-t border-border-subtle pt-space-24">
-            <AuditTrail :entries="audit" />
-          </section>
+              <section v-if="isReviewer && !isWide" class="border-t border-border-subtle pt-space-24">
+                <AuditTrail :entries="audit" />
+              </section>
+            </template>
+          </div>
         </template>
-      </div>
+
+        <template #skeleton>
+          <RecordSkeleton :reviewer="isReviewer" />
+        </template>
+      </LoadRegion>
 
       <RenewalModal
         v-if="record"
@@ -85,21 +106,34 @@
     </template>
 
     <template #right-panel>
+      <!-- Same request as the record column: a secondary LoadRegion (skeleton and reveal, but no second live region or
+           error notice; the main region announces the load and shows the error + Retry, this panel stays empty). -->
       <div class="h-full overflow-y-auto p-space-20">
-        <AuditTrail :entries="audit" />
+        <LoadRegion secondary :load="load">
+          <template #default>
+            <AuditTrail :entries="audit" />
+          </template>
+          <template #skeleton>
+            <AuditTrailSkeleton />
+          </template>
+        </LoadRegion>
       </div>
     </template>
   </PrequalShell>
 </template>
 
 <script>
-import { ChevronLeft } from '@development/linarc-icons';
 import Button from '@/components/Button/Button.vue';
+import HeaderToolIcon from '@/componentsV2/HeaderToolIcon/HeaderToolIcon.vue';
 import Chip from '@/components/Chip/Chip.vue';
 import StatusChip from '@/components/StatusChip/StatusChip.vue';
 import SegmentedControl from '@/componentsV2/SegmentedControl/SegmentedControl.vue';
 import PrequalShell from '~/modules/prequal/PrequalShell.vue';
 import InlineNotice from '~/candidates/InlineNotice/InlineNotice.vue';
+import LoadRegion from '~/candidates/LoadRegion/LoadRegion.vue';
+import Skeleton from '~/candidates/Skeleton/Skeleton.vue';
+import { createLoad } from '~/candidates/LoadRegion/createLoad';
+import { mockRequest } from '~/modules/mock/request';
 import { TODAY, companyById, requestById } from '~/modules/prequal/data';
 import { DEFAULT_RECORD, recordFor } from '~/modules/prequal/data/records';
 import { requestStatus, toneToChipStatus } from '~/modules/prequal/status';
@@ -108,6 +142,9 @@ import RecordSummary from './components/RecordSummary.vue';
 import MonitoringList from './components/MonitoringList.vue';
 import AuditTrail from './components/AuditTrail.vue';
 import RenewalModal from './components/RenewalModal.vue';
+import RecordSkeleton from './components/RecordSkeleton.vue';
+import AuditTrailSkeleton from './components/AuditTrailSkeleton.vue';
+import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
 
 export default {
   name: 'PrequalRecord',
@@ -115,16 +152,20 @@ export default {
     title: 'Preconstruction › Prequalification › Qualification record',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3783-8437',
   },
-  components: { PrequalShell, Button, Chip, StatusChip, SegmentedControl, InlineNotice, RecordSummary, MonitoringList, AuditTrail, RenewalModal, ChevronLeft },
+  components: { PrequalShell, Button, HeaderToolIcon, Chip, StatusChip, SegmentedControl, InlineNotice, RecordSummary, MonitoringList, AuditTrail, RenewalModal, LoadRegion, Skeleton, RecordSkeleton, AuditTrailSkeleton, LoadStatus },
   data() {
     const asked = currentRoute().id;
     const id = asked && requestById[asked] ? asked : DEFAULT_RECORD;
-    const record = recordFor(id);
     return {
       requestId: id,
-      record,
-      documents: record ? record.documents.map((d) => ({ ...d })) : [],
-      audit: record ? [...record.audit] : [],
+      // Filled by fetch(); nothing derived from them renders before the record arrives.
+      record: null,
+      documents: [],
+      audit: [],
+      load: createLoad({ label: 'qualification record' }),
+      /** Send reminder: its own submit; remindFor is the document being (or last) reminded. */
+      reminder: createLoad({ label: 'reminder', action: { busy: 'Sending', done: 'Sent', error: "Couldn't send the reminder. Nothing was sent." } }),
+      remindFor: null,
       today: TODAY,
       role: 'reviewer',
       roleOptions: [
@@ -155,9 +196,19 @@ export default {
     requestLabel() {
       return this.requestId.toUpperCase();
     },
-    openLabel() {
-      return ['submitted', 'under-review'].includes(this.request.workflow) ? 'Open review' : 'Back to Qualified Subs';
+    reminding() {
+      return this.reminder.status === 'loading';
     },
+    /** Every request now opens on the review screen: its review, its decision, or its tracking view. */
+    openLabel() {
+      const w = this.request.workflow;
+      if (['submitted', 'under-review', 'info-requested'].includes(w)) return 'Open review';
+      if (w === 'closed') return 'View decision';
+      return 'Open request';
+    },
+  },
+  created() {
+    this.fetch();
   },
   mounted() {
     this.mq = window.matchMedia('(min-width: 1024px)');
@@ -167,15 +218,30 @@ export default {
   },
   beforeDestroy() {
     if (this.mq) this.mq.removeEventListener('change', this.onMq);
+    this.load.destroy();
+    this.reminder.destroy();
   },
   methods: {
+    fetch() {
+      this.load.run(
+        (signal) =>
+          mockRequest(() => {
+            const record = recordFor(this.requestId);
+            return {
+              record,
+              documents: record ? record.documents.map((d) => ({ ...d })) : [],
+              audit: record ? [...record.audit] : [],
+            };
+          }, { signal }),
+        (r) => Object.assign(this, r),
+      );
+    },
     toneToChipStatus,
     back() {
       go('qualified');
     },
     openRequest() {
-      if (this.openLabel === 'Open review') go('review', this.requestId);
-      else go('qualified');
+      go('review', this.requestId);
     },
     openRenewal(docId) {
       this.renewalFor = docId;
@@ -197,13 +263,21 @@ export default {
       this.renewalOpen = false;
     },
     remind(doc) {
-      this.audit.unshift({
-        at: `${this.today}T${new Date().toTimeString().slice(0, 8)}`,
-        actor: 'Jordan Lee',
-        kind: 'renewal',
-        action: `Sent a reminder to ${this.company.contact}: ${doc.label.toLowerCase()} renewal.`,
-      });
-      this.sentNote = `Reminder sent to ${this.company.contact} for the ${doc.label.toLowerCase()}.`;
+      if (this.reminding) return;
+      this.remindFor = doc;
+      this.reminder.run(
+        (signal) => mockRequest(() => doc.id, { signal }),
+        () => {
+          this.audit.unshift({
+            at: `${this.today}T${new Date().toTimeString().slice(0, 8)}`,
+            actor: 'Jordan Lee',
+            kind: 'renewal',
+            action: `Sent a reminder to ${this.company.contact}: ${doc.label.toLowerCase()} renewal.`,
+          });
+          this.sentNote = `Reminder sent to ${this.company.contact} for the ${doc.label.toLowerCase()}.`;
+          this.remindFor = null;
+        },
+      );
     },
   },
 };

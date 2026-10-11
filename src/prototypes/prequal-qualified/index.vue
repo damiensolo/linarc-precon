@@ -4,7 +4,10 @@
        status, D-16/D-17), with the conditions count beside it. Filters: Status and Trade (SelectV2, multiple), no KPI
        cards: this is a roster, not a pipeline. Row action: View record, Request renewal (reviewer, Expiring / Expired;
        the record's ModalV2), or View decision for a company that was not approved. Rows open the record.
-       Data: src/modules/prequal/data/records.js (recordRows), columns: src/modules/prequal/recordColumns.js. -->
+       Data: src/modules/prequal/data/records.js (recordRows), columns: src/modules/prequal/recordColumns.js.
+       Loading (docs/5-ui-patterns.md §6), as the review queue: rows come from a (mock) request; the shell, title bar
+       and filters stay put. First load: the grid header shows at once and skeleton rows appear only if the answer takes
+       > 200ms. A filter change re-queries and keeps the current rows with "Updating…" in place of the count. -->
   <PrequalShell screen="qualified" title="Qualified subcontractors">
     <template #header-actions>
       <span class="hidden sm:inline-flex items-center gap-space-8">
@@ -40,25 +43,28 @@
             :clearable="true"
             @input="tradeFilter = $event || []"
           />
-          <span class="pb-space-8 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ summary }}</span>
+          <LoadStatus :load="load" @retry="fetch">{{ summary }}</LoadStatus>
         </div>
 
-        <DataGrid
-          class="min-h-0 w-full min-w-0 flex-1"
-          :data="filteredRows"
-          :header="columns"
-          id-field="id"
-          :views="['grid', 'list']"
-          default-view="list"
-          :views-feature-enabled="true"
-          :view-tabs="[]"
-          :show-print="true"
-          :show-save-template="false"
-          :application-should-handle-download="true"
-          :row-height="40"
-          height="100%"
-          @row-click="openRow"
-        />
+        <LoadRegion v-slot="{ skeleton }" class="min-h-0 w-full min-w-0 flex-1" :load="load" content-loads @retry="fetch">
+          <DataGrid
+            class="min-h-0 w-full min-w-0 flex-1"
+            :data="rows"
+            :loading="skeleton"
+            :header="columns"
+            id-field="id"
+            :views="['grid', 'list']"
+            default-view="list"
+            :views-feature-enabled="true"
+            :view-tabs="[]"
+            :show-print="true"
+            :show-save-template="false"
+            :application-should-handle-download="true"
+            :row-height="40"
+            height="100%"
+            @row-click="openRow"
+          />
+        </LoadRegion>
       </div>
 
       <RenewalModal
@@ -80,6 +86,10 @@ import Button from '@/components/Button/Button.vue';
 import DataGrid from '@/components/DataGrid/index.vue';
 import SegmentedControl from '@/componentsV2/SegmentedControl/SegmentedControl.vue';
 import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
+import LoadRegion from '~/candidates/LoadRegion/LoadRegion.vue';
+import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
+import { createLoad } from '~/candidates/LoadRegion/createLoad';
+import { mockRequest } from '~/modules/mock/request';
 import PrequalShell from '~/modules/prequal/PrequalShell.vue';
 import { TODAY, companyById } from '~/modules/prequal/data';
 import { qualifiedRows, qualifiedColumns, qualifiedActionLabel, statusKey, STATUS_OPTIONS } from '~/modules/prequal/recordColumns';
@@ -92,7 +102,7 @@ export default {
     title: 'Preconstruction › Prequalification › Qualified subcontractors',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3818-6279',
   },
-  components: { PrequalShell, Button, DataGrid, SegmentedControl, SelectV2, RenewalModal },
+  components: { PrequalShell, Button, DataGrid, SegmentedControl, SelectV2, RenewalModal, LoadRegion, LoadStatus },
   data() {
     return {
       role: 'reviewer',
@@ -107,26 +117,23 @@ export default {
       renewalRow: null,
       today: TODAY,
       sent: {},
+      rows: [],
+      total: 0,
+      load: createLoad({ label: 'qualified subcontractors' }),
     };
   },
   computed: {
-    rows() {
-      return qualifiedRows(this.$moment);
-    },
     tradeOptions() {
-      const trades = [...new Set(this.rows.flatMap((r) => r.trade.split(' · ')))].sort();
+      // The filter's options don't wait for the rows (filters render at once): the trade list is the roster's, as a
+      // server would return with the filter definition.
+      const trades = [...new Set(qualifiedRows(this.$moment).flatMap((r) => r.trade.split(' · ')))].sort();
       return trades.map((t) => ({ label: t, value: t }));
     },
-    filteredRows() {
-      return this.rows.filter(
-        (r) =>
-          (!this.statusFilter.length || this.statusFilter.includes(statusKey(r))) &&
-          (!this.tradeFilter.length || r.trade.split(' · ').some((t) => this.tradeFilter.includes(t))),
-      );
-    },
     summary() {
-      const n = this.filteredRows.length;
-      const all = this.rows.length;
+      // Nothing until the first answer: a "0 companies" before loading would be a false result.
+      if (!this.load.hasData) return '';
+      const n = this.rows.length;
+      const all = this.total;
       return n === all ? `${all} companies` : `${n} of ${all} companies`;
     },
     columns() {
@@ -136,7 +143,37 @@ export default {
       return this.renewalRow ? companyById[this.renewalRow.id].contact : '';
     },
   },
+  watch: {
+    // Filters are queried, as they would be on the server: the selects answer at once, the rows follow.
+    statusFilter: 'fetch',
+    tradeFilter: 'fetch',
+  },
+  created() {
+    this.fetch();
+  },
+  beforeDestroy() {
+    this.load.destroy();
+  },
   methods: {
+    fetch() {
+      const { statusFilter, tradeFilter } = this;
+      this.load.run(
+        (signal) =>
+          mockRequest(() => {
+            const all = qualifiedRows(this.$moment);
+            const rows = all.filter(
+              (r) =>
+                (!statusFilter.length || statusFilter.includes(statusKey(r))) &&
+                (!tradeFilter.length || r.trade.split(' · ').some((t) => tradeFilter.includes(t))),
+            );
+            return { rows, total: all.length };
+          }, { signal }),
+        ({ rows, total }) => {
+          this.rows = rows;
+          this.total = total;
+        },
+      );
+    },
     openRow({ row }) {
       if (!row) return;
       go(row.record ? 'record' : 'review', row.requestId);

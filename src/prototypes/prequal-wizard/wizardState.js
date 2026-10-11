@@ -2,6 +2,14 @@
 //   prequal-wizard        (default) full-page create screen with Title Bar / Workflow
 //   prequal-wizard-modal  (version B) the same steps in a ModalV2 over the Overview
 // Only the container differs, so a comparison between the two is about the pattern, not the content.
+//
+// Loading (docs/5-ui-patterns.md §6, D-24): the form is local, so it has no page skeleton. Save draft and Send invite
+// are (mock) server calls and honest: the button disables at once (no double submit), "Draft saved …" changes and
+// the flow leaves only after the request resolves, "Saving…" / "Sending…" shows only past 200ms, and a failure keeps
+// everything entered and says so with Retry. Both versions render the shared LoadStatus on `actionLoad` (the last
+// action's controller, createLoad `action`) where they show the saved text; it also announces the result.
+import { createLoad } from '~/candidates/LoadRegion/createLoad';
+import { mockRequest } from '~/modules/mock/request';
 import { companyById } from '~/modules/prequal/data';
 import { steps, initialDraft } from '~/modules/prequal/data/wizard';
 import { currentRoute, go } from '~/modules/prequal/router';
@@ -16,6 +24,10 @@ export default {
       adding: false,
       savedAt: null,
       isNarrow: false,
+      draftLoad: createLoad({ label: 'draft', action: { busy: 'Saving', done: 'Saved', error: "Couldn't save the draft." } }),
+      sendLoad: createLoad({ label: 'invite', action: { busy: 'Sending', done: 'Sent', error: "Couldn't send the invite." } }),
+      /** 'draft' | 'send' | null: the action whose state the save-state slot shows (null: nothing tried yet). */
+      lastAction: null,
     };
   },
   computed: {
@@ -51,6 +63,21 @@ export default {
     savedText() {
       return this.savedAt ? `Draft saved ${this.$moment(this.savedAt).format('h:mm a')}` : '';
     },
+    savingDraft() {
+      return this.draftLoad.status === 'loading';
+    },
+    sending() {
+      return this.sendLoad.status === 'loading';
+    },
+    actionLoad() {
+      return this.lastAction === 'send' ? this.sendLoad : this.draftLoad;
+    },
+    actionFailed() {
+      return this.lastAction !== null && this.actionLoad.status === 'error';
+    },
+    actionRetry() {
+      return this.lastAction === 'send' ? this.send : this.saveDraft;
+    },
   },
   mounted() {
     this.mq = window.matchMedia('(max-width: 639px)');
@@ -60,6 +87,8 @@ export default {
   },
   beforeDestroy() {
     if (this.mq) this.mq.removeEventListener('change', this.onMq);
+    this.draftLoad.destroy();
+    this.sendLoad.destroy();
   },
   methods: {
     goTo(id) {
@@ -74,6 +103,7 @@ export default {
       return null;
     },
     next() {
+      if (this.sending) return;
       if (this.isLast) this.send();
       else this.goTo(steps[this.index + 1].id);
     },
@@ -85,15 +115,25 @@ export default {
       this.draft.companyId = id;
       if (id) this.adding = false;
     },
+    /** A request whose result the server must confirm; LoadStatus shows its state and announces the result. */
+    act(name, load, produce, apply) {
+      this.lastAction = name;
+      return load.run((signal) => mockRequest(produce, { signal }), apply);
+    },
     saveDraft() {
-      this.savedAt = new Date();
+      if (this.savingDraft || this.sending) return;
+      this.act('draft', this.draftLoad, () => new Date(), (at) => { this.savedAt = at; });
     },
     close() {
       go('dashboard');
     },
     send() {
+      // Disabled at once and guarded here, so a second click does nothing. Leaves only after the server confirms.
       // Prototype: the mock data is static, so the new request isn't added to the Overview.
-      go('dashboard');
+      if (this.sending) return;
+      this.act('send', this.sendLoad, () => ({ id: this.requestId || null })).then((r) => {
+        if (r.ok) go('dashboard');
+      });
     },
     openRequest(r) {
       go(['in-progress', 'invited', 'draft'].includes(r.workflow) ? 'dashboard' : 'review', r.id);

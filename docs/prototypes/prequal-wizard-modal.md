@@ -16,3 +16,7 @@ Differences worth looking at in the comparison:
 
 ## Update 2026-10-10: Figma app map
 The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). Frame: 26 `3789:3775`. `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.
+
+## Update 2026-10-11: loading states (D-24)
+Shares `prequal-wizard/wizardState.js`, so Send invite / Save draft are honest here too (see [prequal-wizard.md](prequal-wizard.md)): "Sending…" / "Saving…" and "Couldn't send the invite." + Retry sit in the modal footer where "Draft saved …" was. Verified with the same timeline (medium leaves after ~1s, fail keeps the message, 1 request for 2 clicks); `yarn shot` exits 0.
+- **Consolidated 2026-10-11:** the footer line is the shared `LoadStatus` on `wizardState`'s `actionLoad` (see [prequal-wizard.md](prequal-wizard.md)); re-verified Send invite and Save draft at medium and fail.

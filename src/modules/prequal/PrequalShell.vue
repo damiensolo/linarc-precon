@@ -43,6 +43,7 @@
         :no-bottom-padding="true"
         :scrollable-content="scrollableContent"
         :persist-preferences="false"
+        :header-size="headerSize"
       >
         <template #header>
           <!-- Default: Title Bar / Page (title only). Create screens pass their own (Title Bar / Workflow). -->
@@ -88,6 +89,9 @@ export default {
     /** Fixed 64px bar under the content (step navigation on create screens). */
     bottomPanel: { type: Boolean, default: false },
     scrollableContent: { type: Boolean, default: false },
+    /** Title bar height: `comfortable` (64px, Title Bar / Workflow Size=Comfortable) on detail and create screens with a
+        back button (HeaderToolIcon type="back"); list screens keep the 48px Title Bar / Page. */
+    headerSize: { type: String, default: 'default' },
   },
   data() {
     return { PreconstructionModuleIcon, projects, places, selectedTool: 'prequalification' };

@@ -492,3 +492,34 @@ Why it mattered: each would have shown the exact flashes and flickers the patter
 How it was caught: a scripted timeline of aria-busy, skeleton rows, real rows, the meta line and the live-region text; screenshots of each state in both themes.
 What changed: `createLoad` (synchronous start, indicator continuity), `LoadRegion` (error above kept content), verification step added to `docs/3-verification.md` ("Loading states"). Dark skeleton colour: needs-design.
 Case study: Y. Loading states are timelines, not screenshots; test them by sampling over time.
+Resolved (item 4): 2026-10-11, new tokens `surface/skeleton` / `surface/skeleton-highlight` in Figma and code (P-035); Dark bar #2b2e33 on row #1e1e1e, visible with reduced motion.
+
+## F-059 · 2026-10-11 · Rolling the loading pattern out to every screen: what the shared parts were missing
+Tags: design-system, ai-workflow
+What happened: the pattern (D-24) went onto all eight Prequalification screens in three parallel passes (dashboard + qualified, review + record, portal + wizard), then one consolidation pass. Each pass hit the same gaps and worked around them locally: two copies of a `SubmitStatus` component, hand-built spinner lines and manual announcements for Save / Submit / Send, a right panel copying LoadRegion's logic to avoid a second live region, hand-built KPI skeleton frames (KpiCard's own placeholder was 32px for a 36px value: a 4px shift), and `whitespace-nowrap` / `min-h` patches around LoadStatus. Also found: plain LoadRegion slot children are evaluated by the page at once and threw while the record was null (`<template #default>` fixes it); a write's success announcement was lost when success closed its form (the live region left with it); `RenewalModal` mounted open had nothing preselected (watcher not `immediate`).
+Why it mattered: three local copies of the same behaviour is how lookalikes start; the lost announcements meant screen-reader users never heard that a reminder or renewal was sent.
+How it was caught: the agents' reports listed every workaround as a proposed shared change; the consolidation pass measured each fix (submit timelines, 14 flows; first-load timelines on 8 slugs; a script reading the body-level live region).
+What changed: `createLoad({ action })` (write wording, no Cancel, always confirms), app-level `announce()`, LoadStatus `variant="notice"`, `active`, `size="xs"`, a 24px line held only while it shows something, LoadRegion `secondary`, KpiCard `loading` with Skeleton blocks; local copies deleted. Figma Load Status gained `State=Saving` / `Couldn't save`. Still open: LoadStatus can't hide its visual part at narrow widths (screens wrap it in `sr-only sm:not-sr-only`); at 390 the wizard's inline send error squeezes the page title; clicking the qualified grid's “Request renewal” button also fires the row click and navigates to the record (DataGrid, pre-existing).
+Case study: Y. Parallel agents converge on the same missing abstraction; their workarounds are the spec for the shared component.
+
+## F-060 · 2026-10-11 · Borders that take layout space put centred items on half pixels
+Tags: design-system, verification
+What happened: the user saw the tab number badge sit low in inactive tabs and correctly in the selected tab. Measured at 1x: the inactive badge's top was 15.5px, the selected 14px. The tab's bottom line was a CSS border (1px / 4px) inside a fixed 48px box, so the inactive content box was 47px and the centred badge landed on a half pixel; the circle anti-aliased while the digit snapped separately. The same cause appeared the same day in the new 64px title bar (1px bottom border → back button at 11.5px). P-031 had fixed the digit inside the badge; this was the badge inside the tab.
+Why it mattered: a 1px drift reads as "broken" on badges and icon buttons, and only at 1x (most Windows laptops at 100%), so it hides in 2x screenshots.
+How it was caught: user report; a puppeteer script measuring element tops at deviceScaleFactor 1 and 1.25 (the earlier 2x screenshot showed nothing wrong).
+What changed: tab lines and the comfortable title bar's line are inset box-shadows (Figma strokes don't take layout space either), P-037 / P-038; badge top 16px and button top 12px in every state. Verification: measure fractional tops at 1x when an item is centred in a box with a border (`docs/3-verification.md`).
+Case study: Y. "Figma strokes don't take space; CSS borders do" is a general translation rule.
+
+## F-061 · 2026-10-11 · A prototype-only notice was showing on the review screen
+Tags: ai-workflow, prototype-data
+What happened: only one review (Apex, REQ-001) is mocked, so opening any other request showed an info notice, "Sample review data: … you opened Bluewater Plumbing Co. (REQ-004)", above the real screen. The user asked what it was for.
+Why it mattered: it isn't part of the product; reviewers can't tell sandbox scaffolding from design.
+What changed: removed; every request opens the Apex review exactly as the app would render it. Rule: explain mock-data gaps in the docs, never in the screen.
+Case study: N.
+
+## F-062 · 2026-10-11 · One mocked review hid three states nobody had designed
+Tags: prototype-data, design-gap
+What happened: the review screen only had Apex's data, so every row opened Apex. Writing a review for each of the 24 requests showed that three states had no design: a request the sub hasn't submitted (opened a review that can't exist), a request waiting on information the reviewer asked for (nothing said what was asked), and a decided request (the four decision buttons stayed live on a closed review).
+Why it mattered: a demo walks through rows at random; with one review, every click told the same story, and the gaps only show when the data varies.
+What changed: per-request reviews, records and tracking data (D-26); the tracking view, a read-only decided panel and a waiting-for-subcontractor block; assumptions A7–A9 for product. A scratchpad script checks every review against its list row (open findings, knockouts, checks, weighted section scores, valid until = earliest key document), so the numbers stay consistent when data is edited.
+Case study: Y. Varied, internally consistent mock data is a design tool, not just demo polish.

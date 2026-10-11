@@ -16,15 +16,20 @@
       <component :is="icon" v-if="icon" :size="16" :stroke-width="1.5" class="shrink-0" :class="iconToneClass" aria-hidden="true" />
       <span class="truncate font-label text-fontsize-14 leading-lineheight-20 text-text-subtle" :title="label">{{ label }}</span>
     </span>
-    <span v-if="loading" class="h-space-32 w-space-48 animate-pulse rounded-radius-4 bg-surface-subtle" aria-hidden="true" />
+    <!-- Loading (2026-10-11, D-24): the label is known, so it stays; the value and hint become Skeleton blocks of
+         their exact line boxes (36 and 16), so the card doesn't change size when the numbers arrive. -->
+    <Skeleton v-if="loading" shape="block" class="h-space-36 w-space-48" />
     <span v-else class="font-heading text-fontsize-28 font-bold leading-lineheight-36 tabular-nums text-text-default">{{ value }}</span>
-    <span v-if="hint || $slots.default" class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">
+    <Skeleton v-if="loading && (hint || $slots.default)" shape="block" class="h-space-16 w-space-124" />
+    <span v-else-if="hint || $slots.default" class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">
       <slot>{{ hint }}</slot>
     </span>
   </component>
 </template>
 
 <script>
+import Skeleton from '~/candidates/Skeleton/Skeleton.vue';
+
 const ICON_TONE = {
   neutral: 'text-icon-default',
   info: 'text-icon-info',
@@ -35,6 +40,7 @@ const ICON_TONE = {
 
 export default {
   name: 'KpiCard',
+  components: { Skeleton },
   props: {
     label: { type: String, required: true },
     value: { type: [Number, String], required: true },
@@ -44,6 +50,7 @@ export default {
     icon: { type: [Object, Function], default: null },
     selected: { type: Boolean, default: false },
     interactive: { type: Boolean, default: true },
+    /** Value and hint as skeletons while the count loads; not clickable meanwhile. */
     loading: { type: Boolean, default: false },
   },
   computed: {
@@ -53,7 +60,7 @@ export default {
   },
   methods: {
     onClick(event) {
-      if (this.interactive) this.$emit('click', event);
+      if (this.interactive && !this.loading) this.$emit('click', event);
     },
   },
 };

@@ -58,14 +58,20 @@
           <Button v-if="index > 0" label="Back" color-scheme="secondary" variant="outline" size="medium" @onClick="back" />
           <Button v-else label="Cancel" color-scheme="secondary" variant="minimal" size="medium" @onClick="close" />
           <div class="flex items-center gap-space-12">
-            <span v-if="savedText" class="hidden font-label text-fontsize-12 leading-lineheight-16 text-text-soft sm:inline">{{ savedText }}</span>
-            <Button label="Save draft" color-scheme="secondary" variant="minimal" size="medium" @onClick="saveDraft" />
+            <!-- Save / send state: LoadStatus on the last action ("…ing" only past 200ms, the error + Retry; wizardState
+                 actionLoad). Visually hidden below sm (still announced) except a failure, which shows at every width. -->
+            <span v-if="savedText || lastAction" class="inline-flex" :class="{ 'sr-only sm:not-sr-only': !actionFailed }">
+              <LoadStatus :load="actionLoad" size="xs" @retry="actionRetry">
+                <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">{{ savedText }}</span>
+              </LoadStatus>
+            </span>
+            <Button label="Save draft" color-scheme="secondary" variant="minimal" size="medium" :is-disabled="savingDraft || sending" @onClick="saveDraft" />
             <Button
               :label="isLast ? 'Send invite' : 'Next'"
               color-scheme="primary"
               variant="solid"
               size="medium"
-              :is-disabled="!canContinue"
+              :is-disabled="!canContinue || sending"
               @onClick="next"
             />
           </div>
@@ -80,6 +86,7 @@ import { X } from '@development/linarc-icons';
 import ModalV2 from '@/componentsV2/ModalV2/ModalV2.vue';
 import ProgressStepper from '@/componentsV2/ProgressStepper/ProgressStepper.vue';
 import Button from '@/components/Button/Button.vue';
+import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
 import PrequalDashboard from '../prequal-dashboard/index.vue';
 import StepSubcontractor from '../prequal-wizard/components/StepSubcontractor.vue';
 import StepWork from '../prequal-wizard/components/StepWork.vue';
@@ -94,7 +101,7 @@ export default {
     title: 'Preconstruction › Prequalification › New request (version B: modal)',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3789-3775',
   },
-  components: { ModalV2, ProgressStepper, Button, PrequalDashboard, StepSubcontractor, StepWork, StepRequirements, StepInvite },
+  components: { ModalV2, ProgressStepper, Button, LoadStatus, PrequalDashboard, StepSubcontractor, StepWork, StepRequirements, StepInvite },
   data() {
     return { open: true, closeIcon: X };
   },

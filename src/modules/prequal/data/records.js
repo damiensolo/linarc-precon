@@ -1,15 +1,17 @@
 // PLACEHOLDER DATA — Qualification Records (screen 6). A record exists for every approved request in ./index.js
-// (outcome qualified / qualified-with-conditions). Two are written out in full:
+// (outcome qualified / qualified-with-conditions), each written out in full. These two here, the rest in
+// ./recordDetails.js (one per lifecycle story: current, conditions open, renewal received, expired, suspended):
 //   req-021 Summit Mechanical: approved with conditions a year ago, now "Renewal needed soon" (bonding letter expires
 //            20 Oct 2026, renewal requested 28 Sep); the default record, because it shows monitoring at work.
 //   req-001 Apex Electrical: the end of the vertical slice: the record the review screen's "Approve with conditions"
 //            creates (approved 8 Oct 2026 by Jordan Lee). The review prototype doesn't persist its decision, so this
 //            record is written as that decision's outcome.
-// The others are built from their request row by `genericRecord`. Status keys come from ../status.js
+// `genericRecord` remains as a fallback for a request with no written record. Status keys come from ../status.js
 // (OUTCOME, LIFECYCLE, CONDITION, RENEWAL, DOCUMENT). "Today" for the mock is 2026-10-08 (TODAY in ./index.js).
 import { companyById, requestById, requests, reviewerById, templates } from './index';
 import { requestStatus, LIFECYCLE, OUTCOME } from '../status';
 import * as review from './review';
+import { RECORDS } from './recordDetails';
 
 const addDays = (iso, days) => {
   const d = new Date(`${iso}T00:00:00`);
@@ -106,9 +108,9 @@ const APEX = {
   ],
 };
 
-const DETAILED = { 'req-021': SUMMIT, 'req-001': APEX };
+const DETAILED = { 'req-021': SUMMIT, 'req-001': APEX, ...RECORDS };
 
-/** A plausible record for any other approved request, from its row in ./index.js. */
+/** Fallback: a plausible record for an approved request with no written record, from its row in ./index.js. */
 function genericRecord(r) {
   const company = companyById[r.company];
   const approvedOn = r.activity[0];

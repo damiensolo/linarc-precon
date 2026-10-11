@@ -25,6 +25,10 @@
         <p class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ company.contact }} · {{ company.email }}</p>
       </section>
 
+      <!-- What Linarc knows about the company (open requests, qualifications) is a server lookup: region-scoped, with a
+           skeleton only past 200ms. The company's own details above come with the search result and show at once. -->
+      <LoadRegion :key="companyId" :load="historyLoad" @retry="fetchHistory">
+      <div class="flex flex-col gap-space-32">
       <InlineNotice v-for="r in history.open" :key="r.id" tone="warning" :title="`Open request: ${r.project}`">
         {{ company.name }} already has a request for {{ r.project }} ({{ r.templateName }}), {{ r.status.label.toLowerCase() }}.
         Start a new one only if this is different work.
@@ -51,6 +55,17 @@
           A new request doesn’t change these. If the new work fits an existing qualification, you may not need one.
         </p>
       </section>
+      </div>
+      <template #skeleton>
+        <section class="flex flex-col gap-space-12">
+          <Skeleton size="md" class="w-space-124" />
+          <span v-for="i in 2" :key="i" class="flex flex-col py-space-12">
+            <Skeleton class="w-2/3" />
+            <Skeleton shape="block" class="h-space-16 w-1/2" />
+          </span>
+        </section>
+      </template>
+      </LoadRegion>
     </template>
 
     <section v-else-if="adding" class="flex flex-col gap-space-16">
@@ -74,6 +89,10 @@ import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import Button from '@/components/Button/Button.vue';
 import StatusChip from '@/components/StatusChip/StatusChip.vue';
 import InlineNotice from '~/candidates/InlineNotice/InlineNotice.vue';
+import LoadRegion from '~/candidates/LoadRegion/LoadRegion.vue';
+import Skeleton from '~/candidates/Skeleton/Skeleton.vue';
+import { createLoad } from '~/candidates/LoadRegion/createLoad';
+import { mockRequest } from '~/modules/mock/request';
 import { companyById } from '~/modules/prequal/data';
 import { companyOptions, companyHistory, TRADES } from '~/modules/prequal/data/wizard';
 import { toneToChipStatus } from '~/modules/prequal/status';
@@ -81,7 +100,7 @@ import { currency } from '~/candidates/FormTableFields/format';
 
 export default {
   name: 'StepSubcontractor',
-  components: { SelectV2, FormV2, Button, StatusChip, InlineNotice },
+  components: { SelectV2, FormV2, Button, StatusChip, InlineNotice, LoadRegion, Skeleton },
   props: {
     companyId: { type: String, default: null },
     adding: { type: Boolean, default: false },
@@ -90,6 +109,8 @@ export default {
   data() {
     return {
       companyOptions,
+      history: { open: [], qualifications: [] },
+      historyLoad: createLoad({ label: 'company history' }),
       newCompanySchema: {
         sections: [{
           id: 'new-company',
@@ -108,11 +129,28 @@ export default {
     company() {
       return this.companyId ? companyById[this.companyId] : null;
     },
-    history() {
-      return this.companyId ? companyHistory(this.companyId) : { open: [], qualifications: [] };
-    },
+  },
+  watch: {
+    companyId: { handler: 'fetchHistory', immediate: true },
+  },
+  beforeDestroy() {
+    this.historyLoad.destroy();
   },
   methods: {
+    fetchHistory() {
+      // Another company is a first load, not a refresh: a fresh controller, so the previous company's history is
+      // never shown under the new name (the LoadRegion is keyed by company too).
+      if (this.historyLoad.status !== 'error' || this.historyLoad.hasData) {
+        this.historyLoad.destroy();
+        this.historyLoad = createLoad({ label: 'company history' });
+      }
+      const id = this.companyId;
+      if (!id) {
+        this.history = { open: [], qualifications: [] };
+        return;
+      }
+      this.historyLoad.run((signal) => mockRequest(() => companyHistory(id), { signal }), (h) => { this.history = h; });
+    },
     toneToChipStatus,
     money: currency,
   },

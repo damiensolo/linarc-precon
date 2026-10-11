@@ -18,22 +18,51 @@ export const LOAD_TIMING = Object.freeze({
   slowAfterMs: 5000,
 });
 
+// One polite live region for the whole app, outside every component. A write's messages go here, so "Changes saved"
+// is still heard when success closes the form or modal that started it (a component's own live region is removed
+// with it). Loads keep LoadRegion's live region. Cleared first so a repeated message is announced again.
+let liveNode = null;
+let liveTimer = null;
+export function announce(text) {
+  if (typeof document === 'undefined' || !text) return;
+  if (!liveNode) {
+    liveNode = document.createElement('div');
+    liveNode.setAttribute('role', 'status');
+    liveNode.setAttribute('aria-live', 'polite');
+    liveNode.className = 'sr-only';
+    document.body.appendChild(liveNode);
+  }
+  liveNode.textContent = '';
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => {
+    liveNode.textContent = text;
+  }, 50);
+}
+
 function capitalise(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /**
  * @param {object} [options]
- * @param {string} [options.label] what is loading, lower case, for announcements ("review queue")
+ * @param {string} [options.label] what is loading, lower case, for announcements ("review queue", "changes")
+ * @param {{ busy: string, done: string, error: string }} [options.action] makes this a write (save, send, submit)
+ *   instead of a load: `{ busy: 'Saving', done: 'Saved', error: "Couldn't save." }`. Announces "Saving changes…" /
+ *   "Still saving changes…" / "Changes saved"; LoadStatus shows the busy wording, offers no Cancel (a write can't be
+ *   taken back) and shows `error` + Retry on failure. Same timing and latest-wins rules as a load.
  * @returns reactive state + run / cancel / destroy
  */
-export function createLoad({ label = 'content', indicatorDelayMs = LOAD_TIMING.indicatorDelayMs, slowAfterMs = LOAD_TIMING.slowAfterMs } = {}) {
+export function createLoad({ label = 'content', action = null, indicatorDelayMs = LOAD_TIMING.indicatorDelayMs, slowAfterMs = LOAD_TIMING.slowAfterMs } = {}) {
   let seq = 0;
   let controller = null;
   let timers = [];
 
   const load = Vue.observable({
     label,
+    /** load | action (see options.action). */
+    kind: action ? 'action' : 'load',
+    /** Wording for an action: busy ("Saving"), done ("Saved"), error ("Couldn't save."). */
+    action,
     /** idle | loading | ready | error | cancelled */
     status: 'idle',
     /** Valid content has been shown at least once: refreshes keep it on screen. */
@@ -86,7 +115,8 @@ export function createLoad({ label = 'content', indicatorDelayMs = LOAD_TIMING.i
         setTimeout(() => {
           if (id !== seq) return;
           load.indicator = true;
-          load.announcement = load.hasData ? `Updating ${label}…` : `Loading ${label}…`;
+          if (action) announce((load.announcement = `${action.busy} ${label}…`));
+          else load.announcement = load.hasData ? `Updating ${label}…` : `Loading ${label}…`;
         }, indicatorDelayMs),
       );
     }
@@ -94,7 +124,8 @@ export function createLoad({ label = 'content', indicatorDelayMs = LOAD_TIMING.i
       setTimeout(() => {
         if (id !== seq) return;
         load.slow = true;
-        load.announcement = `Still loading ${label}…`;
+        load.announcement = action ? `Still ${action.busy.toLowerCase()} ${label}…` : `Still loading ${label}…`;
+        if (action) announce(load.announcement);
       }, slowAfterMs),
     );
 
@@ -114,8 +145,10 @@ export function createLoad({ label = 'content', indicatorDelayMs = LOAD_TIMING.i
           if (apply) apply(value);
           load.hasData = true;
           settle('ready');
-          // Announce completion only when the start was announced; a fast load says nothing.
-          load.announcement = announced ? `${capitalise(label)} loaded` : '';
+          // A load announces completion only when its start was announced (a fast load says nothing); an action always
+          // confirms, because the change it made is the point.
+          if (action) announce((load.announcement = `${capitalise(label)} ${action.done.toLowerCase()}`));
+          else load.announcement = announced ? `${capitalise(label)} loaded` : '';
           return { ok: true, value };
         },
         (error) => {
