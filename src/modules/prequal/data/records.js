@@ -7,7 +7,8 @@
 //            record is written as that decision's outcome.
 // The others are built from their request row by `genericRecord`. Status keys come from ../status.js
 // (OUTCOME, LIFECYCLE, CONDITION, RENEWAL, DOCUMENT). "Today" for the mock is 2026-10-08 (TODAY in ./index.js).
-import { companyById, requestById, reviewerById, templates } from './index';
+import { companyById, requestById, requests, reviewerById, templates } from './index';
+import { requestStatus, LIFECYCLE, OUTCOME } from '../status';
 import * as review from './review';
 
 const addDays = (iso, days) => {
@@ -162,6 +163,55 @@ export function recordFor(requestId) {
 }
 
 export const DEFAULT_RECORD = 'req-021';
+
+/** The earliest dated document still to renew: { date, label }, or null. "Next required renewal" on the list. */
+export function nextRenewal(record) {
+  const dated = record.documents.filter((d) => d.expires && !(d.renewal && d.renewal.status === 'received'));
+  dated.sort((a, b) => a.expires.localeCompare(b.expires));
+  return dated.length ? { date: dated[0].expires, label: dated[0].label } : null;
+}
+
+/**
+ * Qualified Subs rows (screen 7): one per company that has a decision, from its latest closed request (the PRD keys
+ * the qualification record by GC and sub, not by project; assumption A2 in docs/prequal/spec.md: a later approval
+ * updates the one record). Companies whose latest decision was Not approved are included with `record: null`
+ * (assumption A1). Apex (req-001) is still under review in the shared data, so it is not listed; its record is the
+ * outcome the review prototype's approval would create.
+ */
+export function recordRows() {
+  const latest = {};
+  requests.filter((r) => r.workflow === 'closed' && r.outcome).forEach((r) => {
+    const prev = latest[r.company];
+    if (!prev || r.activity[0] > prev.activity[0]) latest[r.company] = r;
+  });
+  return Object.values(latest).map((r) => {
+    const company = companyById[r.company];
+    const record = recordFor(r.id);
+    const trades = record ? record.trades : [];
+    const reviewer = reviewerById[r.reviewer];
+    return {
+      id: company.id,
+      requestId: r.id,
+      record,
+      companyName: company.name,
+      trade: trades.length ? trades.map((t) => t.trade).join(' · ') : company.trade,
+      csi: company.csi,
+      state: company.state,
+      outcome: OUTCOME[r.outcome],
+      lifecycle: record && r.lifecycle ? LIFECYCLE[r.lifecycle] : null,
+      status: requestStatus(r),
+      single: trades.length ? Math.max(...trades.map((t) => t.single)) : null,
+      aggregate: trades.length ? Math.max(...trades.map((t) => t.aggregate)) : null,
+      conditions: record ? record.conditions : [],
+      validUntil: record ? record.validUntil || r.validUntil : null,
+      nextRenewal: record ? nextRenewal(record) : null,
+      decidedByName: reviewer ? reviewer.name : '—',
+      decidedOn: record ? record.approvedOn : r.activity[0],
+      project: r.project,
+      templateName: templates[r.template],
+    };
+  });
+}
 
 /** Request ids that have a record (for the picker notice and tests). */
 export const RECORD_IDS = ['req-001', ...Object.keys(requestById).filter((id) => {

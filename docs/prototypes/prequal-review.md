@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-09
 - **Source:** `docs/prequal/spec.md` (screen 5, reviewer hierarchy, three levels of proof, decisions), `docs/prequal/screens.md` §5, `docs/5-ui-patterns.md`
-- **Figma:** Light [3758:5648](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3758-5648) · Dark `3758:8649` (Documentation › Draft)
+- **Figma:** app map Level 1 · 03 [3769:6710](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6710); Level 2a (section `3779:3081`): tabs 05–09, evidence 11, decision panel 10 and states 12–18
 - **URL:** `/?p=prequal-review#req-001` (the Overview's "Review now" opens it; other ids show the same sample with a notice)
 - **Status:** verified
 
@@ -64,3 +64,9 @@ Documentation › Draft: **Review — Light `3758:5648`**, **Dark `3758:8649`** 
 
 ## Findings
 F-046 (right panel never visible from the shell). P-028 in the library log. A parallel session used P-026 / P-027 and F-040 to F-043 while this screen was built; this screen's IDs were moved to the next free numbers.
+
+## Update 2026-10-10: Figma app map
+The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). Frames: 03 `3769:6710`; Level 2a section `3779:3081` with tab crops (Findings `3781:2142`, Submission `3781:2324`, Documents `3781:2436`, Checks `3781:2519`, History `3781:2573`) and panel crops (decision `3779:3082`, evidence `3779:3126`, approve with conditions `3779:3266`, confirm `3779:3514`, approved `3779:3599`, request information `3779:3669`, sent `3779:3780`, reject `3779:3839`, not approved `3779:3946`). `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.
+
+## Update 2026-10-10: Review queue
+The rail item Review Queue now opens the Review queue list (screen 8, `prequal-queue`); its rows open this screen (Review now / Open) and the back arrow returns to the queue instead of the Overview. Figma: Level 1 arrow “32→03 Review now” and the grey back arrow 03→32 replace the old 03→02 back arrow.

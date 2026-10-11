@@ -8,7 +8,7 @@
   <PrequalShell screen="review" title="Review" :right-panel="isWide" :scrollable-content="true">
     <template #header>
       <span class="flex min-w-0 items-center gap-space-8">
-        <Button label="" aria-label="Back to Overview" color-scheme="secondary" variant="minimal" size="medium" @onClick="back">
+        <Button label="" aria-label="Back to Review Queue" color-scheme="secondary" variant="minimal" size="medium" @onClick="back">
           <template #leftIcon><ChevronLeft /></template>
         </Button>
         <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ company.name }}</span>
@@ -92,7 +92,7 @@ export default {
   name: 'PrequalReview',
   prototype: {
     title: 'Preconstruction › Prequalification › Review',
-    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3758-5648',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6710',
   },
   components: { PrequalShell, Button, Chip, StatusChip, TabNavigation, ScoreConfidence, InlineNotice, ReviewOverview, FindingList, ReviewDetails, DecisionPanel, EvidencePanel, ChevronLeft },
   data() {
@@ -167,7 +167,7 @@ export default {
     toneToChipStatus,
     money: currency,
     back() {
-      go('dashboard');
+      go('queue');
     },
     openRecord() {
       go('record', this.request.id);

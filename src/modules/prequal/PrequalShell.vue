@@ -80,7 +80,7 @@ export default {
   name: 'PrequalShell',
   components: { TopNavBar, SideNavV2, AppLayout },
   props: {
-    /** Screen name from router.js (dashboard, requests, review, record …); selects the rail item. */
+    /** Screen name from router.js (dashboard, queue, qualified, review, record …); selects the rail item. */
     screen: { type: String, required: true },
     /** Page title shown in the title bar. */
     title: { type: String, required: true },

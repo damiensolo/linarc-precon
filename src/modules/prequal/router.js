@@ -6,7 +6,8 @@
 
 export const SCREENS = Object.freeze({
   dashboard: 'prequal-dashboard',
-  requests: 'prequal-requests',
+  queue: 'prequal-queue',
+  qualified: 'prequal-qualified',
   wizard: 'prequal-wizard',
   portal: 'prequal-portal',
   review: 'prequal-review',

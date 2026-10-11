@@ -45,11 +45,11 @@ Allowed when the library is incorrect, missing a component or token, or lacks fu
 
 The Prequalification module (`docs/prequal/`: plan, spec, status model, screen inventory) is built as a set of screens that behave as one product area.
 
-- **Slugs:** `prequal-<screen>` (`prequal-dashboard`, `prequal-wizard`, `prequal-portal`, `prequal-review`, `prequal-record`). Shell = Preconstruction top nav + Prequalification rail (D-13), except the subcontractor portal (external user: reduced Linarc top nav, Company variant with logomark, no side rail, no PrequalShell).
+- **Slugs:** `prequal-<screen>` (`prequal-dashboard`, `prequal-wizard`, `prequal-portal`, `prequal-review`, `prequal-record`, `prequal-queue`, `prequal-qualified`). Shell = Preconstruction top nav + Prequalification rail (D-13), except the subcontractor portal (external user: reduced Linarc top nav, Company variant with logomark, no side rail, no PrequalShell).
 - **Shared data and vocabulary:** `src/modules/prequal/` (`status.js`, `nav.js`, `data/`). Screens import from there. **Shell and routing:** every GC-side screen renders inside `~/modules/prequal/PrequalShell.vue`; links between screens use `~/modules/prequal/router.js` (`go(screen, id)`, `href(screen, id)`), which sets `?p=<slug>` and puts the record id in the hash, so each screen stays its own prototype slug for the picker and `yarn shot`.
 - **Candidate components** (D-15): when a screen needs a component that exists in neither Figma nor the library, it's proposed first (`docs/components/<Name>.md` from `_template.md`, row in `docs/components/README.md`), then built in `src/candidates/<Name>/<Name>.vue` (rules in `src/candidates/README.md`), imported as `~/candidates/<Name>/<Name>.vue`, then drawn in Figma with variables bound for a design iteration, and only then promoted into the library with stories, README, `.figma.js` and a P-row. A candidate is built as it will ship: props and slots, no page data, no imports from `src/prototypes/`. Header comment `CANDIDATE <date>`.
 - **Before proposing a candidate**, check the library, the Figma component list and the backlog; a variant of an existing component is an extension (P-row), not a candidate. Each screen should need fewer candidates than the one before; if not, say so.
-- **Every screen ends in Figma** as editable Light + Dark frames on the Documentation file's Draft page (skill step 6), so design reviews there.
+- **Every screen ends in Figma** on the Documentation file's **Prequalifications** app-map page (`3766:33584`): editable light-mode screens and states as library instances, connected by labelled arrows (skill step 6, D-22), so design reviews there.
 
 ## Figma variable → Tailwind class
 

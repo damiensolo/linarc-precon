@@ -1,6 +1,7 @@
-// DataGrid rows and columns for a list of prequalification requests, shared by the Overview (dashboard) and the
-// Requests screens so both show the same data the same way. Columns use the candidate slot types registered in
-// ./gridSlots.js (score-confidence, expiry) and the library status-chip and button slots.
+// DataGrid rows and columns for the Overview's list of prequalification requests (the Requests screen that shared
+// them was removed, D-23). The Review Queue (./queueColumns.js) and Qualified Subs (./recordColumns.js) lists reuse
+// the pieces exported here. Columns use the candidate slot types registered in ./gridSlots.js (score-confidence,
+// expiry) and the library status-chip and button slots.
 import './gridSlots';
 import { requestRows, TODAY } from './data';
 import { KPI, ROLES, toneToChipStatus } from './status';
@@ -25,7 +26,21 @@ export const actionLabel = (row) => {
 
 // A cell with only a `center` slot is centred by DecoratedCell; pin the slot `left` (or `right`) and blank the centre
 // text so the column value stays available for sorting and filtering without rendering twice.
-const BLANK = { type: 'text', componentProps: { value: '' } };
+export const BLANK = { type: 'text', componentProps: { value: '' } };
+
+/** The frozen first column every Prequal list starts with. */
+export const subcontractorColumn = () => ({ field: 'companyName', label: 'SUBCONTRACTOR', type: 'ShortText', width: 210, readonly: true, frozen: true });
+
+/** The pinned row-action column (see the note on `frozen` below). `label` is a string or a per-row function. */
+export const actionColumn = (label, onClick, width = 110) => ({
+  field: 'action',
+  label: '',
+  type: 'Actions',
+  frozen: true,
+  width,
+  readonly: true,
+  cell: { center: BLANK, right: { type: 'button', componentProps: { label, variant: 'text', colorScheme: 'primary', size: 'small' }, onClick } },
+});
 
 /**
  * @param {string} role   'reviewer' | 'estimator' (Score · Confidence only for the reviewer, PRD §10)

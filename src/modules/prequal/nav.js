@@ -4,7 +4,7 @@
 //
 // Preconstruction
 // ├── Bidding           → Bid Projects, Bid Packages, Bid Comparison & Awards
-// ├── Prequalification  → Overview, Requests, Review Queue, Qualified Subs
+// ├── Prequalification  → Overview, Review Queue, Qualified Subs (D-23: Requests removed, it duplicated the Overview)
 // ├── Directory         → Companies (a subcontractor profile and its Qualification summary are pages inside it)
 // └── Configure         → Templates, Qualification Policies, Permissions (prequalification settings)
 import {
@@ -21,7 +21,6 @@ import {
   Package,
   Scale,
   ScrollText,
-  Send,
   ShieldCheck,
 } from '@development/linarc-icons';
 
@@ -48,9 +47,8 @@ export const preconRails = {
   ]),
   prequalification: rail('prequalification', [
     ['Overview', LayoutDashboard, { screen: 'dashboard' }],
-    ['Requests', Send, { screen: 'requests' }],
-    ['Review Queue', ListChecks, { screen: 'review' }],
-    ['Qualified Subs', BadgeCheck, { screen: 'record' }],
+    ['Review Queue', ListChecks, { screen: 'queue' }],
+    ['Qualified Subs', BadgeCheck, { screen: 'qualified' }],
   ]),
   directory: rail('directory', [['Companies', Building2]]),
   configure: rail('configure', [

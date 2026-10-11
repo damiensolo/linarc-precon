@@ -92,7 +92,7 @@ export default {
   mixins: [wizardState],
   prototype: {
     title: 'Preconstruction › Prequalification › New request (version B: modal)',
-    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3751-4083',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3789-3775',
   },
   components: { ModalV2, ProgressStepper, Button, PrequalDashboard, StepSubcontractor, StepWork, StepRequirements, StepInvite },
   data() {

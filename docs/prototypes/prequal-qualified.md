@@ -1,0 +1,50 @@
+# Preconstruction › Prequalification › Qualified subcontractors (`prequal-qualified`)
+
+- **Date:** 2026-10-10
+- **Source:** `docs/Prequal Full PRD UX.md` “Qualified subcontractor list” (l. 1516–1529), data model (l. 630), PM integration (l. 606–608); `docs/prequal/screens.md` §7; assumptions A1–A4 in `docs/prequal/spec.md`
+- **Figma:** app map Level 1 · 31 [3818:6279](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3818-6279) (Documentation › **Prequalifications** app map, page `3766:33584`)
+- **URL:** `/?p=prequal-qualified`. Rail: Qualified Subs. Rows → `prequal-record#<request id>`; View decision → `prequal-review#req-023`.
+- **Status:** verified
+
+## Scope
+- **Persona:** GC Estimator / PM (the PRD’s main reader of the list: “can we use this sub, for what, up to how much”) and the Reviewer, who also gets **Request renewal** on Expiring / Expired rows (assumption A3). The role switch is the same prototype-only control as on the Overview.
+- **Decision this screen supports:** who is qualified for what, under which conditions, and whose qualification is about to lapse.
+- **Nav:** Preconstruction › Prequalification › Qualified Subs (D-23). Replaces the rail item’s direct link to a single record. The record’s back arrow returns here.
+- **Data:** `recordRows()` in `src/modules/prequal/data/records.js`: one row per company with a decision, from its latest closed request (the PRD keys the record by GC and sub, not by project; assumption A2). 8 rows: 3 Current, 2 Renewal needed soon, 1 No longer active, 1 Suspended, 1 Not approved (A1). Apex (req-001) is still under review in the shared data, so it is not listed.
+
+## Layout (top to bottom)
+1. Title bar: “Qualified subcontractors”, View as, New request.
+2. Filter row: **Status** and **Trade** (SelectV2 `multiple`, clearable) and “n companies” / “n of m companies”. No KPI cards: this is a roster, not a pipeline (the Overview has the pipeline).
+3. DataGrid, list view, 40px rows, Subcontractor frozen left, action pinned right (as the Overview). Columns: Subcontractor · Trades (approved scope, joined with “·”) · Status (one chip: the lifecycle, or Not approved) · Single · Aggregate (highest limit on the record) · Conditions (“2 · Project-specific performance and payment bond…”, “None”, or “—”) · Valid until (ExpiryIndicator cell) · Next renewal (earliest dated document still to renew, e.g. “20 Oct 2026 · Surety bonding letter”) · Decided (“Jordan Lee · 2 Oct 2025”) · action.
+4. Row action: **View record** (→ record) · **Request renewal** (reviewer; Expiring / Expired; opens the record screen’s `RenewalModal` for that company) · **View decision** (Not approved → the closed review).
+- The PRD lists Qualification and Lifecycle as two columns; the status model shows one status per list (D-16), so the outcome is carried by the Conditions column (“Approved with conditions” = a conditions count) and the Not approved status.
+
+## Metrics
+| Measure | Value |
+|---|---|
+| Time from spec to first render | not measured (built with the Review queue in one session) |
+| Components used | library: DataGrid (status-chip, button slots), SelectV2 (`multiple`, P-024), SegmentedControl, Button, ModalV2 + FormV2 + Checkbox (inside RenewalModal) · candidates: ExpiryIndicator (grid slot), ScoreConfidence not used here |
+| New candidates | **0** (record 0, review 1, wizard 0, portal 5, dashboard 3) |
+| Library changes | none in code; two Figma needs-design rows (P-032 Side Nav Preconstruction still has Requests; P-033 Segmented Navigation Compact caps at 4 segments, used by the queue) |
+| Gaps found | 1 tooling (F-056, stale Vite transform) |
+
+## Component map
+| Element | Handling |
+|---|---|
+| Shell | `PrequalShell` (`screen="qualified"`) |
+| Filters | SelectV2 `multiple` + `show-checkmark-on-selected`, `w-full sm:w-1/3 lg:w-1/5` |
+| Table | DataGrid list view; columns in `src/modules/prequal/recordColumns.js`; shared `subcontractorColumn()` / `actionColumn()` from `requestColumns.js` |
+| Status cell | library `status-chip` slot, tone → `toneToChipStatus` |
+| Valid until | candidate ExpiryIndicator through the `expiry` slot |
+| Request renewal | `~/prototypes/prequal-record/components/RenewalModal.vue` reused as is |
+
+## Verification
+- `yarn build` passes. `yarn shot prequal-qualified … 1440,1024,390 1024` exits 0 in light and dark, no console errors, no page overflow (the table scrolls inside the grid, as the Overview does; 1,640px of columns at 1440).
+- Browser script (puppeteer): rail Qualified Subs → `?p=prequal-qualified`; row 1 View record → `prequal-record#req-017`; record back arrow → `prequal-qualified`; Request renewal on Tidewater opens the modal with “Will Grant, Tidewater Waterproofing”; Harbor View decision → `prequal-review#req-023`.
+- Figma: frame 31 built from the Overview frame (shell, title bar, toolbar, Data Table column frames rebuilt with the eight columns and eight rows; Select Menu instances for the filters). Audit of Level 1 after the build: 91 screen texts, 0 unstyled; 0 unbound paints, spacing or radii (F-055 rule).
+
+## Figma map
+Level 1: Label/31, hotspots on the Overview’s rail item and on rows 1 and 4, arrows 01 rail → 31 (blue), 31 → “Level 2b · 19 Record” connector (View record), dashed orange 31 → “Level 2b · 20 Renewal modal” (Request renewal). Level 2b’s back connector now reads “← Back arrow · Level 1 · 31 Qualified subcontractors”. Known map gaps: the Select Menu shows “Any status” as a value rather than a placeholder (the component has no placeholder state); the Requests rail item is hidden per instance until P-032 lands in the library.
+
+## Findings
+F-056. Assumptions A1–A4 (`docs/prequal/spec.md`).

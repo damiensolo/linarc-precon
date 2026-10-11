@@ -88,7 +88,7 @@ export default {
   mixins: [wizardState],
   prototype: {
     title: 'Preconstruction › Prequalification › New request',
-    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3752-6459',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6836',
   },
   components: { PrequalShell, ProgressStepper, Button, Chip, ChevronLeft, StepSubcontractor, StepWork, StepRequirements, StepInvite },
   data() {

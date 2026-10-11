@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-08
 - **Source:** `docs/prequal/spec.md` §screens 1, `docs/prequal/screens.md` §1 (no Figma frame; this prototype is the reference pushed to Figma)
-- **Figma:** https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3729-4281 (Light) · `node-id=3730-7228` (Dark); see "Figma reference" below
+- **Figma:** app map Level 1 · 01 Overview [3769:6402](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6402) · 02 Ready-for-review filter `3769:6556` (Documentation › **Prequalifications** app map (page `3766:33584`))
 - **URL:** `/?p=prequal-dashboard` (add `&chrome=0` for a full-window comparison; `#<request id>` is carried by links out of this page)
 - **Status:** verified; in Figma (KpiCard drawn as a component; ScoreConfidence and ExpiryIndicator still text placeholders there)
 
@@ -68,3 +68,6 @@ Scratchpad only for now; copy the 1440 light/dark pair to `docs/case-study/asset
 
 ## Update 2026-10-09: column widths and pinned action
 At the user's request the request table (`src/modules/prequal/requestColumns.js`, shared by the Overview and Requests) was tightened to measured content widths (Subcontractor 210, Trade 130, Project 155, Template 210, Status 275, Score · Confidence 150, Expiration 190, Last activity 180 flex, action 110; was ~1,830px wide, now 1,555px at 1440 in a 1,307px scroller), and the row action became a `type: 'Actions'`, `frozen: true` column, pinned to the right edge (the `cell` button still renders). Checked with puppeteer: all row actions stay visible at scroll 0 and 150px, the subcontractor stays pinned left, no console errors. Expired rows' Expiration hint shortened to "N days ago" (Status already says "No longer active"). Scrollbars: P-030 / F-051.
+
+## Update 2026-10-10: Figma app map
+The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). Frames: 01 Overview `3769:6402` (updated to the code: measured column widths, score dot, pinned row action), 02 KPI filter state `3769:6556`. `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.

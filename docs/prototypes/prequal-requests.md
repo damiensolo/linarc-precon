@@ -1,9 +1,9 @@
 # Preconstruction › Prequalification › Requests (`prequal-requests`, formerly `registry-list`)
 
 - **Date:** 2026-10-06
-- **Figma:** reference Light [3726:76047](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3726-76047) · Dark `3726:77558` (shows the older package table); source frame `1708:58317` (Package list, 1440×1024)
+- **Figma:** none of its own; the request table is the Overview's (app map Level 1 · 01 [3769:6402](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6402)). The old Requests frames (`3726:76047` / `3726:77558`) no longer exist.
 - **URL:** `/?p=prequal-requests` (add `&chrome=0` for a full-window comparison)
-- **Status:** verified; in Figma (older package table). First full-layout test of the workflow.
+- **Status:** **archived 2026-10-10 (D-23)**: the screen was removed; this record stays as the history of the first full-layout test of the workflow.
 
 ## Metrics
 | Measure | Value |
@@ -94,3 +94,9 @@ F-014, F-015, F-016, F-017, F-018, F-019, F-020, F-021, F-022, F-023.
 
 ## Update 2026-10-09: column widths and pinned action
 At the user's request the request table (`src/modules/prequal/requestColumns.js`, shared by the Overview and Requests) was tightened to measured content widths (Subcontractor 210, Trade 130, Project 155, Template 210, Status 275, Score · Confidence 150, Expiration 190, Last activity 180 flex, action 110; was ~1,830px wide, now 1,555px at 1440 in a 1,307px scroller), and the row action became a `type: 'Actions'`, `frozen: true` column, pinned to the right edge (the `cell` button still renders). Checked with puppeteer: all row actions stay visible at scroll 0 and 150px, the subcontractor stays pinned left, no console errors. Expired rows' Expiration hint shortened to "N days ago" (Status already says "No longer active"). Scrollbars: P-030 / F-051.
+
+## Update 2026-10-10: Figma app map
+The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). The Requests screen is not drawn separately: it is the Overview table without the KPI cards (deprecation candidate). `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.
+
+## Removed 2026-10-10 (D-23)
+After reviewing the full PRD UX: the PRD has one request list (the “Request tracking workspace”, the Overview), and this screen had nothing of its own (same rows, columns, actions and role switch, minus the KPI cards). The prototype folder, the rail item and the router entry are gone; `requestColumns.js` now serves the Overview and exports the shared pieces (`subcontractorColumn`, `actionColumn`, `BLANK`) that the Review queue and Qualified subcontractors lists reuse.

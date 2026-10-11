@@ -50,7 +50,8 @@
       </template>
 
       <template #header>
-        <span class="flex min-w-0 items-center gap-space-8">
+        <!-- pr-space-8: the 8px gap to the actions in Figma "Title bar / Portal request" (3801:5124); AppLayout's row has none. -->
+        <span class="flex min-w-0 items-center gap-space-8 pr-space-8">
           <span class="inline-flex h-space-24 w-space-24 shrink-0 items-center justify-center rounded-radius-4 bg-surface-neutral font-heading text-fontsize-8 font-bold text-text-default" aria-hidden="true">{{ request.gc.logoText }}</span>
           <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Prequalification for {{ request.project }}</span>
           <span class="hidden truncate font-label text-fontsize-14 leading-lineheight-20 text-text-subtle lg:inline">· requested by {{ request.gc.name }}</span>
@@ -140,7 +141,7 @@ export default {
   name: 'PrequalPortal',
   prototype: {
     title: 'Prequalification › Subcontractor portal',
-    figma: '',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3793-4665',
   },
   components: { TopNavBar, AppLayout, FormV2, SelectV2, Button, PortalSectionNav, PortalOverview, PortalDocuments, PortalReview, LinarcLogoDark },
   data() {

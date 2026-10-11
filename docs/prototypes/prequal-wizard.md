@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-09
 - **Source:** `docs/prequal/spec.md` (screen 2), `docs/prequal/screens.md` §2
-- **Figma:** full page (default) Light [3752:6459](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3752-6459) · Dark `3752:9188`; version B (modal) Light `3751:4083` · Dark `3751:7308` (Documentation › Draft)
+- **Figma:** app map Level 1 · 04 [3769:6836](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6836); Level 2c (section `3788:2862`): steps 2–4, step-1 states, version B modal
 - **URL:** `/?p=prequal-wizard` (default, full-page) · `/?p=prequal-wizard-modal` (version B, modal). `#subcontractor`, `#work`, `#requirements`, `#invite` open a step. The Overview's "New request" opens the default.
 - **Status:** verified
 
@@ -78,3 +78,6 @@ F-045 (Tailwind in the dev server misses classes that only new files use until t
 - 2026-10-09: form column and footer row centred (D-19); on phones the qualification row's text takes a full row. Figma frames `3752:6459` / `3752:9188` updated to match.
 - Patterns and visual rules for this and later screens: [../5-ui-patterns.md](../5-ui-patterns.md).
 - 2026-10-09: column widened from 48rem to 56rem after the user asked for 10–15% more and research supported wider columns for forms with tables (D-20). Figma content and footer row 896.
+
+## Update 2026-10-10: Figma app map
+The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). Frames: 04 step 1 `3769:6836`; Level 2c: 23 Work context `3788:2863`, 24 Requirements & checks (full length) `3788:3375`, 25 Invite `3788:3771`, 04a no selection `3789:3612`, 04b add company `3789:3652`, 26 version B modal `3789:3775`. `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.

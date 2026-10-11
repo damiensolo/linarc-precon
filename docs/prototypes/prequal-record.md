@@ -2,13 +2,13 @@
 
 - **Date:** 2026-10-09
 - **Source:** `docs/prequal/spec.md` (Decisions and the Qualification Record, screen 6, visibility by role), `docs/prequal/screens.md` §6, `docs/5-ui-patterns.md`
-- **Figma:** Light [3762:8771](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3762-8771) · Dark `3763:8698` (Documentation › Draft)
+- **Figma:** app map Level 2b · 19 [3783:8437](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3783-8437) · renewal modal `3783:11459` · renewal sent `3783:11584` · Estimator view `3783:8624`
 - **URL:** `/?p=prequal-record` (Summit Mechanical, renewal needed soon) · `#req-001` (Apex: the record the review screen's approval creates) · `#req-022` (expired) · `#req-003` (not approved: no record). Rail: Qualified Subs. Review screen: "View qualification record".
 - **Status:** verified
 
 ## Scope
 - **Persona:** the GC Prequal Reviewer (and Estimator/PM, restricted). **Decision:** "can we use this sub, for what, up to how much, on what terms, and is it still current?"; for the reviewer also "what needs renewing?"
-- **Nav:** Preconstruction › Prequalification › Qualified Subs (rail) → record. No Qualified Subs list exists yet; the rail item opens the default record.
+- **Nav:** Preconstruction › Prequalification › Qualified Subs (rail) → record. Since 2026-10-10 the rail item opens the Qualified subcontractors list (screen 7, `prequal-qualified`); its rows open this screen, and the back arrow returns to it.
 - **Pattern (docs/5-ui-patterns.md):** full page under the module nav; **Title Bar / Workflow** header (back · company · `QR-021` chip · `Status:` lifecycle chip), View as + Request renewal on the right. Record on the left; **audit trail in AppLayout's right panel** (activity, as the RFI screen and the review screen); below 1024px it moves inline at the end. **Request renewal is a ModalV2**: a short single-step task (§1).
 - **Data:** `src/modules/prequal/data/records.js`: Summit (req-021) and Apex (req-001) written out; every other approved request gets a record built from its row. Status from `status.js`: OUTCOME, LIFECYCLE, and two new vocabularies, CONDITION (Open / In force / Met) and RENEWAL (Renewal requested / Renewal received).
 
@@ -67,3 +67,9 @@ Documentation › Draft: **Qualification Record — Light `3762:8771`**, **Dark 
 
 ## Findings
 F-049 (ExpiryIndicator date-only parsing), F-050 (dark chip label; fixed in Figma, P-029).
+
+## Update 2026-10-10: Figma app map
+The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). Frames (Level 2b section `3783:8436`): 19 Record `3783:8437` (Request renewal drawn as an overlay: Title Bar / Workflow has no actions slot in this variant), 20 modal `3783:11459`, 21 sent `3783:11584`, 22 Estimator / PM view `3783:8624`. `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.
+
+## Update 2026-10-10: Qualified subcontractors list
+The back arrow and the “no record” notice now return to `prequal-qualified` (screen 7) instead of the Overview; the list’s Request renewal action reuses this screen’s `RenewalModal`. Figma: Level 2b’s back connector reads “← Back arrow · Level 1 · 31 Qualified subcontractors”; the row-action connector lists 01 and 31.

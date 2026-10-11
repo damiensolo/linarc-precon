@@ -1,7 +1,7 @@
 # Prequalification › New request, version B: modal (`prequal-wizard-modal`)
 
 - **Date:** 2026-10-09
-- **Figma:** Documentation › Draft, New request (version B: modal) — Light `3751:4083` / Dark `3751:7308`
+- **Figma:** app map Level 2c · 26 [3789:3775](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3789-3775) (comparison only)
 - **URL:** `/?p=prequal-wizard-modal` (`#work`, `#requirements`, `#invite` open a step)
 - **Status:** verified; kept for comparison
 
@@ -13,3 +13,6 @@ Differences worth looking at in the comparison:
 - The modal keeps the Overview visible behind a scrim; the full page keeps the module nav and the title bar's back arrow instead.
 - The modal needs its own width (no wide Modal size in Figma) and scrolls the steps inside the dialog; the full page scrolls the content area and pins the footer to the window.
 - On a phone both end up full-screen; the full page keeps the top nav, the modal covers it.
+
+## Update 2026-10-10: Figma app map
+The Light / Dark frames on the Documentation file's Draft page were deleted at the user's request; the reference is now the Documentation › **Prequalifications** app map (page `3766:33584`), light mode, every screen and state as editable library instances with labelled arrows (D-22). Frame: 26 `3789:3775`. `prototype.figma` points there. Dark mode is checked in code (`yarn shot`), not drawn.

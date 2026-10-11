@@ -1,8 +1,8 @@
 <template>
   <!-- Preconstruction › Prequalification › Overview: the GC Request Dashboard (docs/prequal/screens.md §1).
        KPI cards filter the table; rows open the review screen or the qualification record (router.js).
-       Reviewer sees Score · Confidence; the Estimator/PM view hides it (PRD §10). Rows and columns are shared with the
-       Requests screen (src/modules/prequal/requestColumns.js). Figma reference: prd-to-prototype step 6. -->
+       Reviewer sees Score · Confidence; the Estimator/PM view hides it (PRD §10). Rows and columns:
+       src/modules/prequal/requestColumns.js. Figma reference: prd-to-prototype step 6. -->
   <PrequalShell screen="dashboard" title="Overview">
     <template #header-actions>
       <span class="hidden sm:inline-flex items-center gap-space-8">
@@ -66,7 +66,7 @@ export default {
   name: 'PrequalDashboard',
   prototype: {
     title: 'Preconstruction › Prequalification › Overview',
-    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3729-4281',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6402',
   },
   components: { PrequalShell, Button, DataGrid, SegmentedControl, KpiCard },
   data() {

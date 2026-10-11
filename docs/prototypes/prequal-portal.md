@@ -2,9 +2,9 @@
 
 - **Date:** 2026-10-09
 - **Source:** `docs/prequal/sub-portal-data.md` (fields, documents, submission rules), `docs/prequal/screens.md` §3 and §4
-- **Figma:** not yet pushed (see "Figma reference")
+- **Figma:** app map Level 3 · 27 Overview [3793:4665](https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3793-4665) · 28 Insurance `3794:5002` · 29 Documents `3794:5301` · 30 Review & submit `3793:5026` · document-slot states 29a–29f
 - **URL:** `/?p=prequal-portal` (`#<section id>` opens a section: `#safety`, `#documents`, `#review`; `&chrome=0` full-window)
-- **Status:** verified; restyled for visual hierarchy 2026-10-09 (see below); Figma reference pending
+- **Status:** verified; restyled for visual hierarchy 2026-10-09 (see below); in the Figma app map (Level 3, 2026-10-10)
 
 ## Scope
 - **Persona:** the invited subcontractor (no Linarc account). Request shown: Northstar Fire Protection for Harbor Point Clinic, Healthcare Specialty v1, 67% complete.
@@ -101,3 +101,6 @@ F-036 (sandbox setup gaps surfaced by FormV2), F-037 (DropArea glyph: a Figma mi
 
 ## Screenshots
 Scratchpad only; copy the Safety 1440 light pair (before / after P-019) to `docs/case-study/assets/` at the next milestone: they show the dark-mode class of bug the audit rules catch.
+
+## Update 2026-10-10: first Figma reference (app map Level 3)
+Built in the Documentation › **Prequalifications** app map (page `3766:33584`), section `3792:5020`, light mode, from library instances: Top Nav Bar `Module=Company` (logomark; Top Nav Modules, project selector, announcements, messages and chat hidden, leaving help · notifications · profile), a request title bar (GC tile, title, progress, disabled Submit), the section nav as a `[candidate] PortalSectionNav` frame, Input Field / Progress Bar / Checkbox / Button / Status Chip / Drop Area instances, and document slots as `[candidate] DocumentSlot` frames. Frames: 27 Overview `3793:4665` (full length), 28 Insurance `3794:5002` (viewport; evidence slot under each field, mismatch notice), 29 Documents `3794:5301` (viewport), 30 Review & submit `3793:5026` (full length), slot states 29a rejected `3794:5506`, 29b processing `3794:5544`, 29c needs review `3794:5574`, 29d accepted with extracted details `3794:5602`, 29e partly uploaded `3794:5653`, 29f missing `3794:5689`. Known gap: the Progress Bar component only has 0/25/50/75/100% variants and its track ignores a resize, so 27 shows 75% fill with the label "67%".

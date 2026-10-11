@@ -1,5 +1,5 @@
 <template>
-  <!-- Preconstruction › Prequalification › Qualified Subs → record: the Qualification Record (docs/prequal/screens.md §6),
+  <!-- Preconstruction › Prequalification › Qualified Subs (list, prequal-qualified) → record: the Qualification Record (docs/prequal/screens.md §6),
        the durable output of an approval. Patterns (docs/5-ui-patterns.md): full page under the module nav; Title Bar /
        Workflow header (back · company · record ID chip · status); the record on the left; the audit trail in AppLayout's
        right panel (activity, as on the RFI screen), inline at the end below 1024px. Request renewal is a short
@@ -8,7 +8,7 @@
   <PrequalShell screen="record" title="Qualification record" :right-panel="isWide && isReviewer" :scrollable-content="true">
     <template #header>
       <span class="flex min-w-0 items-center gap-space-8">
-        <Button label="" aria-label="Back to Overview" color-scheme="secondary" variant="minimal" size="medium" @onClick="back">
+        <Button label="" aria-label="Back to Qualified Subs" color-scheme="secondary" variant="minimal" size="medium" @onClick="back">
           <template #leftIcon><ChevronLeft /></template>
         </Button>
         <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ company.name }}</span>
@@ -113,7 +113,7 @@ export default {
   name: 'PrequalRecord',
   prototype: {
     title: 'Preconstruction › Prequalification › Qualification record',
-    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3762-8771',
+    figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3783-8437',
   },
   components: { PrequalShell, Button, Chip, StatusChip, SegmentedControl, InlineNotice, RecordSummary, MonitoringList, AuditTrail, RenewalModal, ChevronLeft },
   data() {
@@ -156,7 +156,7 @@ export default {
       return this.requestId.toUpperCase();
     },
     openLabel() {
-      return ['submitted', 'under-review'].includes(this.request.workflow) ? 'Open review' : 'Back to Overview';
+      return ['submitted', 'under-review'].includes(this.request.workflow) ? 'Open review' : 'Back to Qualified Subs';
     },
   },
   mounted() {
@@ -171,11 +171,11 @@ export default {
   methods: {
     toneToChipStatus,
     back() {
-      go('dashboard');
+      go('qualified');
     },
     openRequest() {
       if (this.openLabel === 'Open review') go('review', this.requestId);
-      else go('dashboard');
+      else go('qualified');
     },
     openRenewal(docId) {
       this.renewalFor = docId;
