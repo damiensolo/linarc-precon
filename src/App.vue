@@ -28,17 +28,28 @@
         </a>
       </div>
 
-      <Button
-        :label="isDark ? 'Dark' : 'Light'"
-        color-scheme="secondary"
-        variant="outline"
-        size="small"
-        @onClick="toggleTheme"
-      />
+      <div class="flex items-center gap-space-8">
+        <!-- Simulated request latency for reviewing loading states (src/modules/mock/request.js). Remounts the screen. -->
+        <SelectV2
+          v-model="latency"
+          class="w-space-124 sm:w-auto"
+          size="small"
+          placeholder="Simulated latency"
+          :options="latencyOptions"
+        />
+        <Button
+          :label="isDark ? 'Dark' : 'Light'"
+          color-scheme="secondary"
+          variant="outline"
+          size="small"
+          @onClick="toggleTheme"
+        />
+      </div>
     </header>
 
-    <main class="flex-1 min-h-0 overflow-auto">
-      <component :is="current.component" v-if="current" />
+    <main ref="main" class="flex-1 min-h-0 overflow-auto">
+      <!-- Keyed by slug + record id: a link to another record of the same screen remounts it with that record. -->
+      <component :is="current.component" v-if="current" :key="`${currentSlug}${routeHash}|${latency}`" />
     </main>
   </div>
 </template>
@@ -47,6 +58,8 @@
 import Button from '@/components/Button/Button.vue';
 import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
 import prototypes from '~/prototypes';
+import { NAVIGATE_EVENT } from '~/modules/prequal/router';
+import { LATENCY_OPTIONS, latencyScenario } from '~/modules/mock/request';
 
 const THEME_KEY = 'linarc-prototypes:theme';
 
@@ -69,6 +82,9 @@ export default {
       // ?chrome=0 renders the prototype full-window, for pixel comparison with Figma frames.
       showChrome: new URLSearchParams(window.location.search).get('chrome') !== '0',
       isDark: false,
+      routeHash: window.location.hash,
+      latency: latencyScenario(),
+      latencyOptions: LATENCY_OPTIONS,
     };
   },
   computed: {
@@ -80,6 +96,12 @@ export default {
     },
   },
   watch: {
+    latency(value) {
+      const url = new URL(window.location.href);
+      if (value === 'instant') url.searchParams.delete('latency');
+      else url.searchParams.set('latency', value);
+      window.history.replaceState(null, '', url);
+    },
     currentSlug(slug) {
       const url = new URL(window.location.href);
       url.searchParams.set('p', slug);
@@ -95,8 +117,22 @@ export default {
       this.isDark = queryTheme === 'dark';
     }
     this.applyTheme();
+    // In-document navigation (D-24): screens call router.go(), which pushes the URL and fires NAVIGATE_EVENT; Back and
+    // Forward fire popstate. Either way only the prototype swaps; the page never reloads, so the shell never blanks.
+    window.addEventListener(NAVIGATE_EVENT, this.syncFromUrl);
+    window.addEventListener('popstate', this.syncFromUrl);
+  },
+  beforeDestroy() {
+    window.removeEventListener(NAVIGATE_EVENT, this.syncFromUrl);
+    window.removeEventListener('popstate', this.syncFromUrl);
   },
   methods: {
+    syncFromUrl() {
+      const slug = readQuerySlug();
+      if (this.prototypes.some((p) => p.slug === slug)) this.currentSlug = slug;
+      this.routeHash = window.location.hash;
+      if (this.$refs.main) this.$refs.main.scrollTop = 0;
+    },
     toggleTheme() {
       this.isDark = !this.isDark;
       this.applyTheme();

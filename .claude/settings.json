@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /c/Users/damie/Projects/linarc-design-components-current; ls linarc-prototypes/src/prototypes linarc-prototypes/src/modules/prequal linarc-prototypes/src/candidates; cat linarc-prototypes/src/prototypes/index.js; ls linarc-design-components/src/componentsV2 linarc-design-components/src/components | tr '\\\\n' ' '; echo; grep -rlis \"skeleton\\\\|shimmer\" linarc-design-components/src --include=*.vue --include=*.css --include=*.scss | head -30)",
+      "Read(//c/Users/damie/Projects/linarc-design-components-current/**)",
+      "Bash(cd /c/Users/damie/Projects/linarc-design-components-current; grep -n \"duration\\\\|ease\\\\|motion\\\\|transition\\\\|animation\\\\|keyframes\" linarc-design-components/tailwind.config.js | head -30; grep -in \"duration\\\\|easing\\\\|motion\" linarc-design-components/src/styles/tokens.css | head; echo ---; head -40 linarc-design-components/src/components/Spinner.vue; echo ---; grep -n \"^#\\\\|^##\" linarc-prototypes/docs/5-ui-patterns.md; echo ---; grep -n \"^## D-\\\\|^### D-\\\\|^| D-\" linarc-prototypes/docs/4-decisions.md | tail -5; grep -n \"^## F-\\\\|^### F-\" linarc-prototypes/docs/findings-log.md | tail -3; tail -5 linarc-design-components/PRPs/prototype-changes/README.md | cut -c1-200; cat linarc-prototypes/docs/components/README.md | head -40)"
+    ]
+  }
+}

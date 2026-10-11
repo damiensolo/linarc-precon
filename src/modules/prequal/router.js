@@ -1,8 +1,15 @@
 // Module router for the Prequalification screens (docs/prequal/00-plan.md, Q5).
 //
 // Each screen is its own prototype slug, so the sandbox picker and `yarn shot <slug>` keep working. A link from one
-// screen to another sets `?p=<slug>` (a page load; the mock data is static so nothing is lost) and carries the record
-// id in the hash: `?p=prequal-review#req-004`. Other query params (theme, chrome) are preserved.
+// screen to another sets `?p=<slug>` and carries the record id in the hash: `?p=prequal-review#req-004`. Other query
+// params (theme, chrome) are preserved.
+//
+// Navigation stays in the document (D-24, docs/5-ui-patterns.md §6): `go()` pushes a history entry and tells App.vue to
+// swap the screen, so the app shell never blanks. It used to be `location.assign`, a full reload that showed a white
+// page until every module and the CSS loaded again (F-057). Back / Forward work through `popstate`.
+
+/** Event App.vue listens for to swap the screen after `go()` changes the URL. */
+export const NAVIGATE_EVENT = 'prototype:navigate';
 
 export const SCREENS = Object.freeze({
   dashboard: 'prequal-dashboard',
@@ -45,6 +52,7 @@ export function href(screen, id) {
 export function go(screen, id) {
   const target = href(screen, id);
   if (!target) return false;
-  window.location.assign(target);
+  window.history.pushState(null, '', target);
+  window.dispatchEvent(new Event(NAVIGATE_EVENT));
   return true;
 }

@@ -24,7 +24,7 @@
 | Time from spec to first render | not measured (built with Qualified subcontractors in one session) |
 | Components used | library: DataGrid (status-chip, button slots), SegmentedControl, Checkbox, Button · candidate: ScoreConfidence (`cell`) through the grid slot |
 | New candidates | **0** |
-| Library changes | none in code; Figma P-033 (Segmented Navigation Compact has no five-segment variant, so the map uses the full-height Count=5 set) |
+| Library changes | Figma P-033 (done, unpublished): Segmented Navigation Compact gained `Count` = 2…5 × `Selected` = 1…n (14 variants, all bindings kept), a documentation frame and an updated Code Connect template |
 | Gaps found | 0 beyond P-033 |
 
 ## Component map
@@ -46,3 +46,6 @@ Level 1: Label/32 under 03 Review; hotspot on the Overview’s rail item with a 
 
 ## Findings
 Assumptions A5–A6 (`docs/prequal/spec.md`); P-033.
+
+## Update 2026-10-10: compact segmented control in the design system
+At the user’s request the quick-filter strip is now a proper design-system component: Segmented Navigation Compact (`604adb6bb6e3ac8b69c4510436026aa1cb230003`, ☉ Data Tables) has `Count` 2 · 3 · 4 · 5 × `Selected` 1…n (14 variants built from the four existing ones, every fill / padding / height / radius still bound: surface/tab-switcher, space-2, space-28, radius-6; segments are Segment Tab instances), a regenerated description, a “Segmented Navigation Compact Documentation” frame beside the set (same builder as the full-height one) and an updated `SegmentedNavigationCompact.figma.js` (Count + five labels). **Pending publish:** once the library is published, the map’s frame 32 swaps its full-height Count=5 instance for `Count=5, Selected=1` of the compact set (the code’s `size="md"`).
