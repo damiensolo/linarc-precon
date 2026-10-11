@@ -2,7 +2,7 @@
 
 **Read this before building or changing any screen.** These are decisions the user has made in review, not defaults to re-derive. Each rule points at its decision (`4-decisions.md`) or finding (`findings-log.md`). If a screen seems to need something that breaks a rule here, stop and ask; don't quietly diverge.
 
-Last updated 2026-10-09. Applies to every Prequalification screen and, unless a rule says otherwise, to any module.
+Last updated 2026-10-10. Applies to every Prequalification screen and, unless a rule says otherwise, to any module.
 
 ## 1. Page patterns: which container for which task (D-18)
 
@@ -53,6 +53,8 @@ Last updated 2026-10-09. Applies to every Prequalification screen and, unless a 
 | A value compared across sources | **EvidenceComparison** (candidate) | ad-hoc tables |
 | A right panel from `PrequalShell` | `right-panel` prop (sets enabled **and** visible, F-046) | AppLayout `right-panel-enabled` alone (stays hidden) |
 | Upload zone | library DropArea (icon 36px, 2px stroke, `border/default`, outline browse button, P-020) | — |
+| Moving between screens | `router.go(screen, id)` / `href()` (in-document, D-24) | `location.assign`, `<a href>` page loads |
+| Data that loads (first load, refresh, failure) | **LoadRegion** + **LoadStatus** + `createLoad()` (candidates, §6); DataGrid `loading` (P-034) for tables; **Skeleton** for other layouts | a full-screen spinner, an empty state shown while loading, a hand-made pulse |
 
 ## 5. Open design flags (don't "fix" in code without a decision)
 
@@ -60,3 +62,74 @@ Last updated 2026-10-09. Applies to every Prequalification screen and, unless a 
 - Figma Modal has no wide size; Title Bar / Workflow has no module-neutral Create variant (needs-figma).
 - No content-width token: the form columns use Tailwind `max-w-4xl` / `max-w-3xl` (needs-token: `layout/form-wide`, `layout/form`).
 - ProgressStepper active label is bold in code, Regular in Figma (P-025, for design).
+- Figma's skeleton (Data Table / Sheet Cell `Type=Skeleton Loader`) is bound to `surface/neutral`, which is the same colour as the table row in Dark mode (#1e1e1e on #1e1e1e): placeholders vanish, and under reduced motion (no shimmer) nothing shows at all. Code keeps the Figma binding (D-14). Proposal: `surface/subtle` (light #f4f4f5, dark 5% white) or a new `surface/skeleton` token (needs-design, P-034, F-058).
+- No motion tokens (duration, easing) exist in Figma or `tokens.css`; the loading timings in §6 are CSS custom properties and JS constants until they do (needs-token).
+
+## 6. Navigation, loading and transitions (D-24)
+
+The goal is an interface that answers every action at once and makes waiting calm, without pretending work is done. These rules apply to every screen and module; the parts are reusable (§4).
+
+### Never blank the app
+
+- **Moving between screens never reloads the page.** `router.go()` pushes the URL and swaps only the screen; the top nav and rail stay where they are, Back / Forward work (`popstate`). A full reload blanks everything, white even in Dark mode, until the scripts and CSS load again (F-057).
+- **Keep what's valid on screen.** The shell, the title bar, the page heading, filters and table headers don't depend on the data, so they render at once. Only the region whose data is pending changes.
+- **Never a full-screen or page-blocking spinner.** Loading is shown inside the region that is loading (a `LoadRegion`), never over the whole page.
+
+### Timing
+
+| When | What shows | Value (configurable) |
+|---|---|---|
+| Answer in under 200ms | **Nothing.** The result replaces the old view directly; no loader flash | `LOAD_TIMING.indicatorDelayMs` = 200 |
+| After 200ms, nothing on screen yet (first load) | **Skeleton** in the final layout (headings, labels and value rows in place); the grid header stays real | same |
+| After 200ms, content already on screen (refresh, filter, sort) | **Keep the content**; a small inline indicator ("Updating…") in the page's meta line | same |
+| After 5s | Add **"Still loading…"** and a **Cancel** (no stage names, no percentages, no time remaining) | `LOAD_TIMING.slowAfterMs` = 5000 |
+| Result arrives | Show it **immediately**. If a skeleton was seen, fade it in once (opacity only) | `--load-reveal-ms` = 160ms |
+| Skeleton animation | One soft highlight sweeping left to right, all skeletons in phase | `--skeleton-shimmer-ms` = 1600ms |
+
+- **No artificial waiting.** Never hold a result to finish a shimmer cycle or meet a minimum display time.
+- **The 200ms grace period also reserves space.** The skeleton (or the content component's own placeholder mode) is rendered invisible from the first frame, so when it appears nothing moves, and when content replaces it nothing jumps.
+- **Navigation itself is not a request.** A screen swap takes 46–83ms in the dev build (measured 2026-10-10), so it shows no loader; the new screen and its selected rail item are the acknowledgement.
+
+### Acknowledge, and never double-submit
+
+- The control the user touched changes **at once**: the segmented filter selects, the rail item highlights, a submit button is disabled (`is-disabled` while `load.status === 'loading'`) before the request starts, so a second click does nothing. (Button has no busy/spinner state in code; check Figma's Button before adding one.)
+- **Latest request wins.** A new request (another filter, a retry) supersedes the running one; the old answer is ignored when it arrives, never applied (`createLoad` does this). An indicator already showing stays on across superseding requests (no off-and-on flicker).
+
+### Honest states, always ending
+
+- Unknown progress = **indeterminate** indicator (StatusIndicator `type="spinner"`). Use a percentage only when the backend reports real progress.
+- Don't show results that aren't results: no "0 requests" or empty state while loading, no "Saved" or success message before the server confirms.
+- Every load ends in **ready, error or cancelled**; timers are cleared and pending answers dropped when the screen is left (`load.destroy()` in `beforeDestroy`).
+- **Failure with nothing on screen:** an error notice in the region ("Couldn't load the review queue.") with **Retry**; the table frame stays. **Failure on refresh:** keep the content, and show "Couldn't update." with Retry in the meta line. **Cancel:** with content, back to it; without content, "Loading stopped." with Retry.
+
+### Accessibility
+
+- The loading region has `aria-busy="true"` while its request runs.
+- One polite live region per loading region announces **meaningful changes only**: "Loading review queue…" (only once the indicator shows), "Still loading…", "Review queue loaded" (only if the start was announced). Never per animation cycle. Errors use `role="alert"`.
+- Skeletons are `aria-hidden`.
+- **`prefers-reduced-motion: reduce`:** skeletons are static (no shimmer), content appears without the fade. (The library spinner still rotates; flagged.)
+
+### How to build it
+
+```js
+// data():
+load: createLoad({ label: 'review queue' }),   // ~/candidates/LoadRegion/createLoad.js
+// created(): this.fetch();   beforeDestroy(): this.load.destroy();
+fetch() {
+  this.load.run(
+    (signal) => api.getQueue({ filter: this.filter }, { signal }),   // prototypes: mockRequest(() => data, { signal })
+    (result) => { this.rows = result.rows; },                        // applied before the state turns ready
+  );
+},
+```
+
+```vue
+<LoadStatus :load="load" @retry="fetch">{{ summary }}</LoadStatus>     <!-- in the page's meta line -->
+<LoadRegion v-slot="{ skeleton }" :load="load" content-loads @retry="fetch">
+  <DataGrid :data="rows" :loading="skeleton" … />                      <!-- tables: DataGrid's own skeleton rows -->
+</LoadRegion>
+<!-- Other layouts: <LoadRegion :load="load"> content <template #skeleton> <Skeleton … /> rows </template> -->
+```
+
+- **Reviewing loading states:** prototype data is static and answers instantly. The sandbox header's **Latency** select (or `?latency=fast|medium|slow|fail|fail-once`) delays or fails the mock request (`src/modules/mock/request.js`). Reference implementation: `prequal-queue`.
+

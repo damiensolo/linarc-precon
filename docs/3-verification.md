@@ -44,6 +44,12 @@ Headless Chrome hides scrollbars unless told not to; `yarn shot` now keeps them.
 
 **Pixel-snapped centring (F-052).** Badges, icons and digits centred with `absolute` + `translate(-50%)` drift off-centre on half-pixel rows: the translated box isn't snapped, but its text is. Use flex centring, then check that the child's centre equals the parent's centre at 1×, 1.25× and 1.5× (`deviceScaleFactor`).
 
+## Loading states (added 2026-10-10, F-058)
+
+For any screen that loads data through `createLoad` (`docs/5-ui-patterns.md` §6), run each `?latency=` scenario (`instant`, `fast`, `medium`, `slow`, `fail`, `fail-once` + Retry) plus a refresh (change a filter) and two superseding changes 300ms apart. Sample every 50ms with a puppeteer-core script: the region's `aria-busy`, skeleton count, real row count, the meta-line text and the live-region text. Pass when: `instant` and `fast` show no skeleton and announce nothing; skeletons appear only after ~200ms; the header's `y` never changes while loading; a refresh keeps the rows; "Still loading…" appears at ~5s; the final rows match the last request; every run ends with `aria-busy="false"`. Check the skeleton's `animation-name` is `none` under `emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])`, and look at each state in both themes.
+
+**Navigation:** a link between screens must not reload. Set `window.__same = 1`, click, and check it survives; a CDP screencast (`Page.startScreencast`) of the click should have no frame where the top nav is blank.
+
 ## State-change check (added 2026-10-07, F-029)
 
 Interactive components must not change size or position between states. For each button, tab, chip or input on the page, measure the bounding box at rest, with keyboard focus (Tab, so `:focus-visible` applies) and while pressed (`mouse.down()` without `mouse.up()`). Width, height, x and y must match in all three. Also read `getComputedStyle(el).outlineWidth` / `outlineOffset` to confirm the state stroke is drawn. Pattern: P-015 / F-029 (a puppeteer-core script in the scratchpad, as in the computed-value check).

@@ -472,3 +472,23 @@ Why it mattered: the screenshots looked like a code error; time could have gone 
 How it was caught: the build passed while the dev server failed, so the server was suspected; `curl` of the served module confirmed it.
 What changed: `touch` on the edited files made Vite re-transform them. Rule for the playbook: when `yarn shot` reports a missing export that `yarn build` accepts, touch the file (or restart `yarn dev`) before debugging the code.
 Case study: N.
+
+## F-057 · 2026-10-10 · Every link between screens reloaded the page and blanked the app
+Tags: tooling, ai-workflow
+What happened: the user saw the whole screen go white when going from Overview to Review Queue. `router.go()` used `window.location.assign`, a full document load: the browser drops the page and paints white (also in Dark mode, since the theme class is set by script) until Vite serves every module and the ~8MB CSS again. Measured in headless Chrome against the dev server: a fully white frame, 4.3s until the queue rendered (`sameDocument: false`). The module was designed this way on purpose ("a page load; the mock data is static so nothing is lost", `router.js`), which was true for data and wrong for the experience.
+Why it mattered: it made the prototype feel broken, and it hid that the screens themselves are fast.
+How it was caught: user report; measured with a CDP screencast that samples the top nav, rail and content in every frame after the click.
+What changed: `go()` now pushes history and fires `prototype:navigate`; App.vue swaps the prototype (keyed by slug + record hash) and listens to `popstate` for Back / Forward. After: same document, 0 blank frames in light and dark, 46–83ms of script per swap (8 rail clicks), row → review → Back → Back → Forward all correct, no console errors. Rule: `docs/5-ui-patterns.md` §6, D-24.
+Case study: Y. Perceived performance is mostly architecture: the shell was blanking for a reason that had nothing to do with loading data.
+
+## F-058 · 2026-10-10 · Building the loading pattern: three timing traps and an invisible dark skeleton
+Tags: design-system, figma, tooling
+What happened: testing the new loading states with simulated latency (fast 120ms, medium 900ms, slow 6.5s, fail, fail-once, refresh, superseded requests, reduced motion), sampled every 50ms:
+1. A 120ms answer still triggered the loader and announced "loaded": the request was started in a microtask, so it only began after the first render (~110ms of DataGrid mount), while the 200ms indicator clock was already running. Fixed by starting the request synchronously in `run()`.
+2. Two filter clicks 300ms apart turned "Updating…" off and back on; a superseding run now keeps an indicator that is already showing.
+3. On a failed first load the error notice replaced the whole grid, header included; the table frame now stays below the notice.
+4. Figma's skeleton cell is bound to `surface/neutral`, which in Dark mode equals the table row colour (#1e1e1e on #1e1e1e). Only the shimmer band is visible; with reduced motion nothing is. Kept as drawn (D-14) and flagged (P-034).
+Why it mattered: each would have shown the exact flashes and flickers the pattern exists to prevent, and none is visible in a static screenshot.
+How it was caught: a scripted timeline of aria-busy, skeleton rows, real rows, the meta line and the live-region text; screenshots of each state in both themes.
+What changed: `createLoad` (synchronous start, indicator continuity), `LoadRegion` (error above kept content), verification step added to `docs/3-verification.md` ("Loading states"). Dark skeleton colour: needs-design.
+Case study: Y. Loading states are timelines, not screenshots; test them by sampling over time.
