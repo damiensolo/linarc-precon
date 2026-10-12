@@ -168,6 +168,8 @@ import { createLoad } from '~/candidates/LoadRegion/createLoad';
 import { mockRequest } from '~/modules/mock/request';
 import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 export default {
   name: 'DecisionPanel',
   components: { Check, Button, Checkbox, FormV2, LoadStatus },
@@ -300,10 +302,11 @@ export default {
       const missing = this.openFindings.filter((f) => f.severity === 'missing');
       const open = this.openFindings.filter((f) => f.severity === 'finding');
       return [
-        { ok: knockouts === 0, label: knockouts ? `${knockouts} knockout` : 'No knockouts confirmed' },
-        { ok: missing.length === 0, label: missing.length ? `${missing.length} required item failed` : 'Required items met', detail: missing.map((f) => f.title).join(' · ') },
-        { ok: open.length === 0, label: open.length ? `${open.length} open findings` : 'No open findings' },
-        { ok: running.length === 0, label: running.length ? `${running.length} checks still running` : 'All checks complete', detail: running.map((k) => k.label).join(' · ') },
+        // Counts are pluralised ("2 required items failed"; was "2 required item failed", 2026-10-11).
+        { ok: knockouts === 0, label: knockouts ? plural(knockouts, 'knockout') : 'No knockouts confirmed' },
+        { ok: missing.length === 0, label: missing.length ? `${plural(missing.length, 'required item')} failed` : 'Required items met', detail: missing.map((f) => f.title).join(' · ') },
+        { ok: open.length === 0, label: open.length ? plural(open.length, 'open finding') : 'No open findings' },
+        { ok: running.length === 0, label: running.length ? `${plural(running.length, 'check')} still running` : 'All checks complete', detail: running.map((k) => k.label).join(' · ') },
       ];
     },
     contextRows() {
@@ -366,7 +369,7 @@ export default {
       const DONE = {
         conditions: { title: 'Approved with conditions', body: `${this.companyName} is qualified with conditions until ${this.$moment(this.approval.validUntil).format('D MMM YYYY')}.`, record: true },
         approve: { title: 'Approved', body: `${this.companyName} is qualified until ${this.$moment(this.approval.validUntil).format('D MMM YYYY')}.`, record: true },
-        request: { title: 'Information requested', body: `${this.infoForm.items.length} item(s) sent to ${this.companyName}. The request moves to “More information needed”.`, record: false },
+        request: { title: 'Information requested', body: `${plural(this.infoForm.items.length, 'item')} sent to ${this.companyName.replace(/\.$/, '')}. The request moves to “More information needed”.`, record: false },
         reject: { title: 'Not approved', body: `${this.companyName} has been told: ${this.rejection.reason}.`, record: false },
       };
       // A second click while the first is in flight does nothing (the button is disabled on the next frame).

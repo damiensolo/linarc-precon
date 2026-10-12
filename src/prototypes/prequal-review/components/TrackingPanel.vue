@@ -77,7 +77,7 @@ export default {
     sentence() {
       const t = this.tracking;
       const who = t.recipient.name;
-      if (this.draft) return `Not sent. ${t.invitedBy} saved it as a draft; ${who} hasn't been invited.`;
+      if (this.draft) return `Not sent. ${t.invitedBy} saved it as a draft; ${who} hasn’t been invited.`;
       if (!t.opened) return `Sent to ${who} on ${this.fmt(t.invitedOn)}; not opened yet.`;
       if (this.request.workflow === 'invited') return `${who} opened the invitation on ${this.fmt(t.opened)} but hasn't started.`;
       return `${who} is completing the requirements.`;
