@@ -89,3 +89,6 @@ Verified (puppeteer-core, 50ms samples): send at medium leaves at ~950ms, at fai
 
 ## Update 2026-10-11: title bar back button (D-25, P-038)
 The header is Title Bar / Workflow `Size=Comfortable`: `PrequalShell header-size="comfortable"` (64px, 12px around the button, 20px sides) and the back button is the library **HeaderToolIcon `type="back"`** (grey fill, no border at rest: Figma `Show Border` off; hover adds a darker stroke, pressed darkens the fill, 2px keyboard focus ring), replacing the borderless minimal Button. Measured: button 40×40 at top 12 / left 20 in both themes, focus ring 2px, no console errors.
+
+## Update 2026-10-11: Send invite creates the request (D-29)
+Send invite now creates a real request in the demo session (`data/session.js` `createRequest`): next number (REQ-025…), the chosen or new company, project, template, limits, checks. It appears on the Overview as Waiting for subcontractor (the KPI counts it) and the request's tracking view opens (PRD UX l. 1186). Its portal opens from the sandbox record picker; from there the whole flow runs.

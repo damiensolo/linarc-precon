@@ -16,6 +16,10 @@ Two FormV2 field types the registry lacks: **repeat** (zero or more rows of a re
 ## API (FormV2 field contract, `_baseFieldProps`)
 `field.props.columns: [{ key, label, format? }]` with `format` ∈ currency · number · percent · yesno · date; `key` may be a dotted path. Repeat adds `minimum` and `addLabel`. Value: array of row objects. Emits `input` / `blur` as any field.
 
+Layout (2026-10-11): both fields are `min-w-0`, and RepeatField's table scrolls inside `overflow-x-auto`, so a wide table never widens the form (F-065).
+
+Editable (2026-10-11): RepeatField opens an inline row editor (a FormV2 built from the columns: `input` text | number | date | select, `options`, `optional`, `wide`) with Add / Save and Cancel, plus Edit and Remove per row; MatrixField's value cells are small InputV2s. Both emit `input` and `blur` like any FormV2 field. Rules come from the schema: `required` and `minLength` (minimum rows) for tables, a custom “every cell” rule for grids. Their buttons pass `native-type="button"` (P-039, F-066).
+
 ## Tokens
 `border/subtle` (row rules), `text/subtle` (headers, row labels), `text/default`, `text/soft`, `text/warning/low` ("n of m required" short), `space-4/8`; Button secondary outline sm for Add.
 
@@ -32,3 +36,6 @@ Matrix scrolls horizontally under 640px. Numbers right-aligned, tabular. Repeat 
 - [ ] Verified in both themes at 1440 / 1024 / 390
 
 **Revised 2026-10-09 (hierarchy):** each table field is a subsection. The schema passes `props.title` (and `props.required`) and leaves `label` empty, so FieldRenderer draws no 13px label; the field draws its own 16px bold heading with the required mark, keeps `space-8` above and below, and the section grid gap is 24px, so neighbouring subsections sit ~40px apart. Row padding `space-10`. Asked for by the user on Experience & workforce and References ("too dense, hierarchy not used well").
+
+**Revised 2026-10-11 (alignment, D-26, §7):** MatrixField's table hugs its content; editable cells are 124px left-aligned inputs at form size with headers left over them; read-only values stay right-aligned with tabular digits. RepeatField's read-only money / number / percent columns are right-aligned (headers too). Both scroll boxes are `relative` so the sr-only "Actions" header can't widen the page.
+

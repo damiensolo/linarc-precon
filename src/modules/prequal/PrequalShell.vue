@@ -1,7 +1,9 @@
 <template>
   <!-- Shared shell for GC-side Prequalification screens (D-13): Preconstruction top nav (Bookmarks hidden),
        Side Nav Preconstruction rail for the selected tool, AppLayout for the page. Figma: Top Nav Bar
-       Module=Preconstruction (40024068:91824), Side Nav Preconstruction (40024068:92254), Title Bar / Page. -->
+       Module=Preconstruction (40024068:91824), Side Nav Preconstruction (40024068:92254), Title Bar / Page.
+       The rail's selector bar is the module accent, icon/accent/teal (as in Figma and the top nav's Precon teal);
+       without it SideNavV2 falls back to surface/primary blue (fixed 2026-10-11, F-063). -->
   <div class="flex flex-col h-full bg-surface-page">
     <TopNavBar
       :module="{ label: 'Precon', ariaLabel: 'Preconstruction', icon: PreconstructionModuleIcon, showChevron: true }"
@@ -27,6 +29,7 @@
         :aria-label="currentTool.label"
         :module-list="rail"
         :selected-id="selectedNav"
+        selector-color="var(--icon-accent-teal)"
         @click="onNav"
       />
 

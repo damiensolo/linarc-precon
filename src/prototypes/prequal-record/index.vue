@@ -30,6 +30,17 @@
         <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-subtle">View as</span>
         <SegmentedControl v-model="role" :options="roleOptions" aria-label="View as" size="md" />
       </span>
+      <!-- The decision this record came from (2026-10-11, user request): the review, read-only once decided. Reviewers
+           only: estimators never see scores or findings (PRD §10). -->
+      <Button
+        v-if="isReviewer && (record || !load.hasData)"
+        label="View review"
+        color-scheme="secondary"
+        variant="minimal"
+        size="medium"
+        :is-disabled="!load.hasData"
+        @onClick="viewReview"
+      />
       <!-- Kept in place (disabled) while the record loads, so the title bar doesn't shift when it arrives. -->
       <Button
         v-if="isReviewer && (record || !load.hasData)"
@@ -134,8 +145,8 @@ import LoadRegion from '~/candidates/LoadRegion/LoadRegion.vue';
 import Skeleton from '~/candidates/Skeleton/Skeleton.vue';
 import { createLoad } from '~/candidates/LoadRegion/createLoad';
 import { mockRequest } from '~/modules/mock/request';
-import { TODAY, companyById, requestById } from '~/modules/prequal/data';
-import { DEFAULT_RECORD, recordFor } from '~/modules/prequal/data/records';
+import { TODAY, companyById, requestById, requestOptions } from '~/modules/prequal/data';
+import { DEFAULT_RECORD, recordFor, recordIds } from '~/modules/prequal/data/records';
 import { requestStatus, toneToChipStatus } from '~/modules/prequal/status';
 import { currentRoute, go } from '~/modules/prequal/router';
 import RecordSummary from './components/RecordSummary.vue';
@@ -151,6 +162,8 @@ export default {
   prototype: {
     title: 'Preconstruction › Prequalification › Qualification record',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3783-8437',
+    // Sandbox record picker (App.vue): requests with a qualification record.
+    records: () => requestOptions(recordIds()),
   },
   components: { PrequalShell, Button, HeaderToolIcon, Chip, StatusChip, SegmentedControl, InlineNotice, RecordSummary, MonitoringList, AuditTrail, RenewalModal, LoadRegion, Skeleton, RecordSkeleton, AuditTrailSkeleton, LoadStatus },
   data() {
@@ -241,6 +254,9 @@ export default {
       go('qualified');
     },
     openRequest() {
+      go('review', this.requestId);
+    },
+    viewReview() {
       go('review', this.requestId);
     },
     openRenewal(docId) {

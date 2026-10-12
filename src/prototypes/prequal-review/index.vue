@@ -55,7 +55,7 @@
               <div v-if="!isWide" class="border-t border-border-subtle pt-space-20">
                 <TrackingPanel v-if="tracking" v-bind="trackingProps" @wizard="openWizard" @reminded="history.unshift($event)" />
                 <EvidencePanel v-else-if="evidenceFor" :finding="evidenceFor" :readonly="!!decided" @close="evidenceFor = null" @request-info="requestInfo" @resolve="resolve" />
-                <DecisionPanel v-else v-bind="panelProps" @record="openRecord" @dashboard="back" />
+                <DecisionPanel v-else v-bind="panelProps" @record="openRecord" @dashboard="back" @decided="onDecided" />
               </div>
 
               <div class="flex flex-col gap-space-24">
@@ -89,7 +89,7 @@
           <template #default>
             <TrackingPanel v-if="tracking" v-bind="trackingProps" @wizard="openWizard" @reminded="history.unshift($event)" />
             <EvidencePanel v-else-if="evidenceFor" :finding="evidenceFor" :readonly="!!decided" @close="evidenceFor = null" @request-info="requestInfo" @resolve="resolve" />
-            <DecisionPanel v-else :key="panelKey" v-bind="panelProps" @record="openRecord" @dashboard="back" />
+            <DecisionPanel v-else :key="panelKey" v-bind="panelProps" @record="openRecord" @dashboard="back" @decided="onDecided" />
           </template>
           <template #skeleton>
             <DecisionPanelSkeleton />
@@ -112,12 +112,13 @@ import Skeleton from '~/candidates/Skeleton/Skeleton.vue';
 import { createLoad } from '~/candidates/LoadRegion/createLoad';
 import { mockRequest } from '~/modules/mock/request';
 import { currency } from '~/candidates/FormTableFields/format';
-import { companyById, requestById, templates } from '~/modules/prequal/data';
+import { companyById, requestById, requestOptions, templates } from '~/modules/prequal/data';
 import { REVIEW_ID, reviewFor } from '~/modules/prequal/data/review';
 import { recordFor } from '~/modules/prequal/data/records';
 import { trackingFor } from '~/modules/prequal/data/tracking';
 import { QUEUE_STAGES, requestStatus, toneToChipStatus } from '~/modules/prequal/status';
 import { currentRoute, go } from '~/modules/prequal/router';
+import { decide, resolveFinding, startReview } from '~/modules/prequal/data/session';
 import ReviewOverview from './components/ReviewOverview.vue';
 import FindingList from './components/FindingList.vue';
 import ReviewDetails from './components/ReviewDetails.vue';
@@ -133,6 +134,8 @@ export default {
   prototype: {
     title: 'Preconstruction › Prequalification › Review',
     figma: 'https://www.figma.com/design/9ANM41f3QwNjt27Sl08i8O/Documentation?node-id=3769-6710',
+    // Sandbox record picker (App.vue): every request opens here.
+    records: () => requestOptions(),
   },
   components: { PrequalShell, HeaderToolIcon, Chip, StatusChip, TabNavigation, ScoreConfidence, ReviewOverview, FindingList, ReviewDetails, DecisionPanel, EvidencePanel, LoadRegion, Skeleton, ReviewSkeleton, DecisionPanelSkeleton, RequestProgress, TrackingPanel },
   data() {
@@ -259,6 +262,8 @@ export default {
         (signal) =>
           mockRequest(() => {
             const id = this.requestId;
+            // A reviewer opening a submitted request starts the review (Ready for review → GC is reviewing).
+            startReview(id);
             const request = { ...requestById[id] };
             const review = reviewFor(id);
             if (!review) {
@@ -299,7 +304,14 @@ export default {
       this.requestFor = f.id;
       this.panelKey += 1;
     },
+    /** The decision panel confirmed a decision: record it (data/session.js) and show the request's new status. */
+    onDecided(d) {
+      decide(this.requestId, d.kind === 'approve' || d.kind === 'conditions' ? d.kind : d.kind, d);
+      this.request = { ...requestById[this.requestId] };
+      if (d.kind === 'request') this.infoRequest = { on: this.$moment().format('YYYY-MM-DD'), by: 'Jordan Lee', items: d.items, message: d.message };
+    },
     resolve({ finding, resolution, note }) {
+      resolveFinding(this.requestId, finding.id, { resolution, note, title: finding.title });
       const f = this.findings.find((x) => x.id === finding.id);
       f.resolution = resolution;
       f.impact = `${resolution === 'overridden' ? 'Overridden' : 'Dismissed'} by Jordan Lee: ${note}`;

@@ -85,3 +85,6 @@ The header is Title Bar / Workflow `Size=Comfortable`: `PrequalShell header-size
 
 ## Update 2026-10-11: every approved request has a written record
 The six approved requests that used `genericRecord` now have hand-written records (`src/modules/prequal/data/recordDetails.js`), one per lifecycle story: Delta (Current, two trades), Oakmont (Current), Prairie (Current, approved with conditions: bond in force, ASB registration **open**, a renewal **received** and being checked, two overrides), Tidewater (Renewal needed soon: renewed certificate received 7 Oct, endorsement still requested), Cascade (No longer active: GL lapsed after two reminders; license-inactive monitoring alert; re-applying as REQ-006) and Bluewater (Suspended after an OSHA monitoring alert). Valid until is the earliest key-document expiry on every record (checked by script). `genericRecord` stays as a fallback. The no-record notice now links to the request on the review screen (Open review / View decision / Open request) instead of back to the list.
+
+## Update 2026-10-11: View review
+A **View review** button (minimal, beside Request renewal; reviewers only, estimators never see scores or findings) opens the request's review, read-only once decided. Closes the map gap flagged in Level 2d. Figma: Level 2b · 19 overlay button `3850:6682`, connector and arrow to Level 2d · 36.

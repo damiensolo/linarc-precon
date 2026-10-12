@@ -58,11 +58,13 @@ export default {
     summary() {
       const t = this.tracking;
       if (t.stage === 'draft') return 'Not sent yet';
-      const done = t.sections.filter((s) => s.state === 'complete').length;
+      // Same measure as the portal's: sections answered over the sections that count (Documents excluded).
+      const counted = t.sections.filter((s) => s.id !== 'documents');
+      const done = counted.filter((s) => ['complete', 'needs-attention'].includes(s.state)).length;
       if (!t.opened) return 'Invitation not opened yet';
-      if (!done && !t.lastSaved) return `Opened ${this.$moment(t.opened).format('D MMM')}; nothing completed yet`;
+      if (!done && !t.lastSaved) return `Opened ${this.$moment(t.opened).format('D MMM')}; nothing answered yet`;
       const saved = t.lastSaved ? ` · last saved ${this.$moment(t.lastSaved).format('D MMM, h:mm a')}` : '';
-      return `${done} of ${t.sections.length} sections complete · ${t.percent}%${saved}`;
+      return `${done} of ${counted.length} sections answered · ${t.percent}%${saved}`;
     },
   },
   methods: {

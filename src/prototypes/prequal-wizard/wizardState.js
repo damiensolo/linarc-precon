@@ -11,7 +11,8 @@
 import { createLoad } from '~/candidates/LoadRegion/createLoad';
 import { mockRequest } from '~/modules/mock/request';
 import { companyById } from '~/modules/prequal/data';
-import { steps, initialDraft } from '~/modules/prequal/data/wizard';
+import { steps, initialDraft, projectById } from '~/modules/prequal/data/wizard';
+import { createRequest } from '~/modules/prequal/data/session';
 import { currentRoute, go } from '~/modules/prequal/router';
 
 export default {
@@ -129,10 +130,23 @@ export default {
     },
     send() {
       // Disabled at once and guarded here, so a second click does nothing. Leaves only after the server confirms.
-      // Prototype: the mock data is static, so the new request isn't added to the Overview.
+      // The request is created in the demo session (data/session.js, D-29): it shows on the Overview as Waiting for
+      // subcontractor, its portal opens (sandbox record picker), and the flow continues from there. After sending,
+      // the request's tracking view opens (PRD UX l. 1186: delivery, completion and checks).
       if (this.sending) return;
-      this.act('send', this.sendLoad, () => ({ id: this.requestId || null })).then((r) => {
-        if (r.ok) go('dashboard');
+      this.act('send', this.sendLoad, () => {
+        const w = this.draft.work;
+        return createRequest({
+          companyId: this.draft.companyId,
+          newCompany: this.draft.newCompany,
+          project: (projectById[w.project] || { name: w.project }).name,
+          template: this.draft.template,
+          single: Number(w.single),
+          aggregate: Number(w.aggregate),
+          totalChecks: Math.min(15, Math.max(12, this.draft.checks.length)),
+        });
+      }).then((r) => {
+        if (r.ok) go('review', r.value);
       });
     },
     openRequest(r) {

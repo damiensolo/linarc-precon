@@ -7,6 +7,7 @@
 import { companyById, requestById } from './index';
 import { pillars, sections as portalSections, portalRequest } from './portal';
 import { projects } from './wizard';
+import { session, eventsFor } from './session';
 
 const addDays = (iso, days) => {
   const d = new Date(`${iso}T00:00:00`);
@@ -18,7 +19,7 @@ const PROJECT = Object.fromEntries(projects.map((x) => [x.name, x]));
 
 // invitedBy, invitedOn, opened (date the sub first opened the portal, or null), reminders, lastSaved, extra history.
 const T = {
-  'req-008': { invitedBy: 'Alex Morgan', invitedOn: '2026-10-01', opened: '2026-10-01', reminders: [], lastSaved: '2026-10-08T14:12:00', events: [['2026-10-08T14:12:00', 'Chris Baker', 'Saved progress (60%)'], ['2026-10-07T16:30:00', 'Chris Baker', 'Completed the Safety section'], ['2026-10-04T10:15:00', 'Chris Baker', 'Uploaded 9 documents']] },
+  'req-008': { invitedBy: 'Alex Morgan', invitedOn: '2026-10-01', opened: '2026-10-01', reminders: [], lastSaved: '2026-10-08T14:12:00', events: [['2026-10-08T14:12:00', 'Chris Baker', 'Saved progress (67%)'], ['2026-10-07T16:30:00', 'Chris Baker', 'Completed the Safety section'], ['2026-10-04T10:15:00', 'Chris Baker', 'Uploaded 9 documents']] },
   'req-009': { invitedBy: 'Sofia Ramirez', invitedOn: '2026-09-29', opened: '2026-09-30', reminders: [], lastSaved: '2026-10-06T11:40:00', events: [['2026-10-06T11:40:00', 'Jo Marsh', 'Completed the Company section (25%)']] },
   'req-010': { invitedBy: 'Marcus Hill', invitedOn: '2026-09-24', opened: '2026-09-24', reminders: ['2026-10-01'], lastSaved: '2026-10-08T09:05:00', events: [['2026-10-08T09:05:00', 'Luis Ortega', 'Uploaded financial statements (80%)'], ['2026-10-03T15:20:00', 'Luis Ortega', 'Completed the Safety and Insurance sections']] },
   'req-011': { invitedBy: 'Jordan Lee', invitedOn: '2026-10-01', opened: '2026-10-03', reminders: [], lastSaved: '2026-10-03T13:00:00', events: [['2026-10-03T13:00:00', 'Kim Dao', 'Opened the portal (10%)']], note: 'Re-application: the last request (REQ-023) was not approved because of a DIR debarment that ended on 30 Sep 2026.' },
@@ -29,7 +30,15 @@ const T = {
   'req-016': { invitedBy: 'Marcus Hill', invitedOn: null, opened: null, reminders: [], lastSaved: null, events: [], draftSaved: '2026-10-08T10:20:00' },
 };
 
-const PERCENT = { 'req-008': 60, 'req-009': 25, 'req-010': 80, 'req-011': 10 };
+// How far each sub had got when it last saved (the activity line on its row); sections are filled to match.
+const PERCENT = { 'req-009': 25, 'req-010': 80, 'req-011': 10 };
+
+/** Completion: sections answered (complete or needs attention) over the sections that count (not Documents). The
+ *  portal shows the same number (portalRequests.js `completionFor`, portal.js `completion`). */
+const percentOf = (sections) => {
+  const counted = sections.filter((s) => s.id !== 'documents');
+  return Math.round((counted.filter((s) => ['complete', 'needs-attention'].includes(s.state)).length / counted.length) * 100);
+};
 
 const PUBLIC_CHECKS = [
   ['cslb', 'Contractor license', 'CSLB', 'Active'],
@@ -74,8 +83,20 @@ function sectionsFor(r) {
     .filter((s) => s.id !== 'site-security' || (project && project.siteSecurity));
   if (r.id === portalRequest.requestId) return order.map((s) => ({ ...s, state: byId[s.id].state }));
   const pct = PERCENT[r.id] || 0;
-  const done = Math.round((pct / 100) * order.length);
-  return order.map((s, i) => ({ ...s, state: i < done ? 'complete' : i === done && pct > 0 ? 'in-progress' : 'not-started' }));
+  const answerable = order.filter((s) => s.id !== 'documents');
+  const done = Math.round((pct / 100) * answerable.length);
+  const state = (i) => (i < done ? 'complete' : i === done && pct > 0 ? 'in-progress' : 'not-started');
+  // Documents are uploaded section by section, so the Documents section is in progress once anything is answered.
+  return order.map((s) => (s.id === 'documents'
+    ? { ...s, state: pct > 0 ? 'in-progress' : 'not-started' }
+    : { ...s, state: state(answerable.indexOf(s)) }));
+}
+
+/** The sections, with the states the sub's saved answers give them (data/session.js), if any. */
+function sectionsWithAnswers(r) {
+  const saved = session.answers[r.id];
+  const list = sectionsFor(r);
+  return saved ? list.map((s) => ({ ...s, state: saved.states[s.id] || s.state })) : list;
 }
 
 /**
@@ -84,14 +105,21 @@ function sectionsFor(r) {
  */
 export function trackingFor(requestId) {
   const r = requestById[requestId];
-  const t = T[requestId];
-  if (!r || !t) return null;
+  if (!r || !['draft', 'invited', 'in-progress'].includes(r.workflow)) return null;
+  const saved = session.answers[requestId];
+  // A request from the wizard (or one the sub has started in this session): delivery from the request row.
+  const t = { ...(T[requestId] || { invitedBy: r.invitedBy || 'Jordan Lee', invitedOn: r.invitedOn || null, opened: null, reminders: [], lastSaved: null, events: [] }) };
+  if (saved) {
+    t.opened = t.opened || saved.savedAt.slice(0, 10);
+    t.lastSaved = saved.savedAt;
+  }
   const company = companyById[r.company];
   const history = [
+    ...eventsFor(requestId).map((e) => [e.at, e.actor, e.action]),
     ...t.events,
     ...t.reminders.map((d) => [`${d}T08:00:00`, 'Linarc', `Sent a reminder to ${company.contact}`]),
     ...(t.opened ? [[`${t.opened}T12:00:00`, company.contact, 'Opened the invitation']] : []),
-    ...(t.invitedOn ? [[`${t.invitedOn}T09:00:00`, t.invitedBy, `Sent the invitation to ${company.contact} (${company.email})`]] : []),
+    ...(t.invitedOn && T[requestId] ? [[`${t.invitedOn}T09:00:00`, t.invitedBy, `Sent the invitation to ${company.contact} (${company.email})`]] : []),
     ...(t.draftSaved ? [[t.draftSaved, t.invitedBy, 'Saved the request as a draft']] : []),
   ].sort((a, b) => b[0].localeCompare(a[0])).map(([at, actor, action]) => ({ at, actor, action }));
   return {
@@ -104,8 +132,8 @@ export function trackingFor(requestId) {
     opened: t.opened,
     reminders: t.reminders,
     lastSaved: t.lastSaved,
-    percent: r.id === portalRequest.requestId ? 60 : PERCENT[r.id] || 0,
-    sections: sectionsFor(r),
+    percent: percentOf(sectionsWithAnswers(r)),
+    sections: sectionsWithAnswers(r),
     checks: checksFor(r),
     history,
     note: t.note || null,

@@ -9,6 +9,10 @@
 // missing / finding / info. Resolution: unresolved / resolved / dismissed / overridden.
 
 import { dossierFor } from './dossiers';
+import { companyById, requestById } from './index';
+import { uploadStore } from './uploads';
+import { session, eventsFor } from './session';
+import { DOCUMENT } from '../status';
 
 export const REVIEW_ID = 'req-001';
 
@@ -208,6 +212,69 @@ const APEX_DEFAULTS = {
  * no submission.
  */
 export function reviewFor(requestId) {
+  // A written review (Apex, the dossiers), else the one built when the sub submitted in this demo session.
+  const sub = session.submissions[requestId];
+  const review = baseReview(requestId) || (sub && sub.review ? JSON.parse(JSON.stringify(sub.review)) : null);
+  return review ? withSessionUploads(requestId, withSession(requestId, review)) : null;
+}
+
+/**
+ * The demo session's changes to a review (./session.js): history lines, an information request the reviewer sent,
+ * a rejection, resolved findings.
+ */
+function withSession(requestId, review) {
+  const events = eventsFor(requestId);
+  const seen = new Set(review.history.map((h) => `${h.at}|${h.action}`));
+  const history = [...review.history, ...events.filter((e) => !seen.has(`${e.at}|${e.action}`))].sort((a, b) => b.at.localeCompare(a.at));
+  const info = session.infoRequests[requestId];
+  const decision = session.decisions[requestId];
+  const resolved = session.resolutions[requestId] || {};
+  const findings = review.findings.map((f) => (resolved[f.id]
+    ? { ...f, resolution: resolved[f.id].resolution, impact: `${resolved[f.id].resolution === 'overridden' ? 'Overridden' : 'Dismissed'} by ${resolved[f.id].by}: ${resolved[f.id].note}` }
+    : f));
+  return {
+    ...review,
+    history,
+    findings,
+    infoRequest: info ? { at: info.at, on: info.on, by: info.by, dueOn: info.dueOn, items: info.items, message: info.message } : review.infoRequest,
+    decided: decision && decision.kind === 'reject' ? { outcome: 'not-qualified', by: decision.by, on: decision.on, reason: decision.reason, message: decision.message } : review.decided,
+  };
+}
+
+// Portal slot id → review document id.
+const SLOT_TO_DOC = { coi: 'coi', 'ai-endorsement': 'ai', waiver: 'wos', emr: 'emr', osha300a: 'osha300a', financials: 'fin', bonding: 'bond', w9: 'w9', license: 'license' };
+const shortDate = (at) => new Date(at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+/**
+ * What the subcontractor uploaded in the portal this session (data/uploads.js): each document replaces the one on
+ * file (kept as superseded), a history line per upload, and a sent response marks the information request answered.
+ */
+function withSessionUploads(requestId, review) {
+  const uploads = uploadStore.uploads[requestId] || {};
+  const response = uploadStore.responses[requestId];
+  if (!Object.keys(uploads).length && !response) return review;
+  const contact = companyById[requestById[requestId].company].contact;
+  const documents = [...review.documents];
+  const history = [...review.history];
+  const received = [];
+  for (const [slot, up] of Object.entries(uploads)) {
+    const id = SLOT_TO_DOC[slot] || slot;
+    const i = documents.findIndex((d) => d.id === id);
+    const fresh = { id, label: up.label, status: up.status, note: `${up.message} Uploaded ${shortDate(up.at)}.`, validThrough: up.validThrough || null, restricted: i >= 0 ? documents[i].restricted : false };
+    if (i >= 0) documents.splice(i, 1, fresh, { ...documents[i], id: `${id}-previous`, status: 'superseded', note: `Replaced ${shortDate(up.at)}` });
+    else documents.push(fresh);
+    history.unshift({ at: up.at, actor: contact, action: `Uploaded ${up.label.charAt(0).toLowerCase()}${up.label.slice(1)} (${up.files.map((f) => f.name).join(', ')}): ${DOCUMENT[up.status].label.toLowerCase()}` });
+    // What came back for the information request: uploads after it was sent (all of them for a written request).
+    const since = review.infoRequest && (review.infoRequest.at || `${review.infoRequest.on}T00:00:00`);
+    if (!since || up.at > since) received.push(up.label);
+  }
+  if (response) history.unshift({ at: response.at, actor: contact, action: 'Sent a response to the information request' });
+  history.sort((a, b) => b.at.localeCompare(a.at));
+  const infoRequest = review.infoRequest && response ? { ...review.infoRequest, respondedAt: response.at, received } : review.infoRequest;
+  return { ...review, documents, history, infoRequest };
+}
+
+function baseReview(requestId) {
   if (requestId === REVIEW_ID) {
     return {
       context,

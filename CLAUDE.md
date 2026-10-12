@@ -10,6 +10,7 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 
 - `yarn dev` → http://localhost:5173 (`?p=<slug>` picks a prototype, `?theme=dark|light` forces a theme)
 - `yarn build` → production build (catches import/compile errors)
+- Sandbox **record picker**: screens that declare `prototype.records` (review, record, portal) get a second select in the sandbox bar to open any request (D-27).
 - `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core (if Edge fails to launch, set `EDGE_PATH` to Chrome, F-041); the dev server must be running. Write output to the scratchpad, not the repo.
 
 ## Rules
@@ -27,6 +28,7 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 - **Mock data** lives in `src/prototypes/<slug>/data.js`; screens of one module share it in `src/modules/<module>/data/` so a row on one screen leads to the same entity on the next. Make it plausible for construction project management, and mark it `// PLACEHOLDER DATA` until it's been verified.
 - **UI patterns are decided; read `docs/5-ui-patterns.md` before building or changing a screen.** In short: create flows are **full-page create screens** (module nav + Title Bar / Workflow `Size=Comfortable` with the back button = `HeaderToolIcon type="back"`, D-25 + centred form column, 56rem for wide forms + fixed bottom-panel footer aligned to that column), **never modals**; modals only for short single-step tasks. One container level, hairlines not boxes, whitespace not rules between sections, colour only where the user must act, one signal per status, label-only buttons (D-17, D-18). Alternatives for comparison are a second slug `<slug>-<variant>` sharing state and components.
 - **Never blank the screen (D-24, `docs/5-ui-patterns.md` §6).** Move between screens with `router.go()` / `href()` (in-document; never `location.assign`). Data that loads goes through `createLoad` + `LoadRegion` / `LoadStatus` (tables: DataGrid `loading`): nothing for 200ms, then a skeleton in the final layout or, on refresh, the content kept with "Updating…"; "Still loading…" after 5s; error + Retry; no full-screen spinners, no fake progress, no artificial delays. Review with the sandbox **Latency** select (`?latency=`).
+- **Data entry is left-aligned (D-26, `docs/5-ui-patterns.md` §7).** Inputs of every type left-aligned and sized to their value (FormV2 `props.width: 'short'` for years, counts, rates); table-style entry hugs its content; only read-only numbers in table columns are right-aligned.
 - **Status is never a string literal in a template.** Labels and tones come from the module's status vocabulary (`src/modules/prequal/status.js`, documented in `docs/prequal/status-model.md`): text plus colour, never colour alone; red only for knockout / expired / rejected.
 
 ## Changing the design system

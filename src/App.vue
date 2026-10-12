@@ -17,6 +17,16 @@
           :options="prototypeOptions"
           :visible-item-count="8"
         />
+        <!-- Record picker: screens that take a record id in the hash (prototype.records). Sandbox only, like the picker. -->
+        <SelectV2
+          v-if="recordOptions.length"
+          v-model="currentRecord"
+          class="w-full sm:w-1/3 lg:w-1/4"
+          size="small"
+          placeholder="Choose a record"
+          :options="recordOptions"
+          :visible-item-count="8"
+        />
         <a
           v-if="current && current.figma"
           :href="current.figma"
@@ -36,6 +46,15 @@
           size="small"
           placeholder="Simulated latency"
           :options="latencyOptions"
+        />
+        <!-- The demo session (src/modules/prequal/data/session.js): back to the starting data. Sandbox only. -->
+        <Button
+          v-if="demoChanged"
+          label="Reset demo data"
+          color-scheme="secondary"
+          variant="minimal"
+          size="small"
+          @onClick="resetDemo"
         />
         <Button
           :label="isDark ? 'Dark' : 'Light'"
@@ -60,6 +79,7 @@ import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
 import prototypes from '~/prototypes';
 import { NAVIGATE_EVENT } from '~/modules/prequal/router';
 import { LATENCY_OPTIONS, latencyScenario } from '~/modules/mock/request';
+import { hasChanges, resetSession } from '~/modules/prequal/data/session';
 
 const THEME_KEY = 'linarc-prototypes:theme';
 
@@ -94,6 +114,26 @@ export default {
     current() {
       return this.prototypes.find((p) => p.slug === this.currentSlug);
     },
+    demoChanged() {
+      return hasChanges();
+    },
+    recordOptions() {
+      return this.current && this.current.records ? this.current.records() : [];
+    },
+    /** The record id in the hash (`#req-006` or `#req-006/insurance`); setting it opens that record (remounts). */
+    currentRecord: {
+      get() {
+        const id = decodeURIComponent(this.routeHash.slice(1)).split('/')[0];
+        return this.recordOptions.some((o) => o.value === id) ? id : null;
+      },
+      set(id) {
+        if (!id || id === this.currentRecord) return;
+        const url = new URL(window.location.href);
+        url.hash = id;
+        window.history.pushState(null, '', url);
+        this.routeHash = url.hash;
+      },
+    },
   },
   watch: {
     latency(value) {
@@ -105,6 +145,11 @@ export default {
     currentSlug(slug) {
       const url = new URL(window.location.href);
       url.searchParams.set('p', slug);
+      // A record id belongs to the screen it was opened on; picking another screen starts without one.
+      if (slug !== readQuerySlug()) {
+        url.hash = '';
+        this.routeHash = '';
+      }
       window.history.replaceState(null, '', url);
     },
   },
@@ -132,6 +177,9 @@ export default {
       if (this.prototypes.some((p) => p.slug === slug)) this.currentSlug = slug;
       this.routeHash = window.location.hash;
       if (this.$refs.main) this.$refs.main.scrollTop = 0;
+    },
+    resetDemo() {
+      resetSession();
     },
     toggleTheme() {
       this.isDark = !this.isDark;

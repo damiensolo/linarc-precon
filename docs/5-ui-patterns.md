@@ -153,3 +153,18 @@ save: createLoad({ label: 'changes', action: { busy: 'Saving', done: 'Saved', er
 
 - **Reviewing loading states:** prototype data is static and answers instantly. The sandbox header's **Latency** select (or `?latency=fast|medium|slow|fail|fail-once`) delays or fails the mock request (`src/modules/mock/request.js`). Reference implementation: `prequal-queue`.
 
+## 7. Data entry: alignment and width (D-26)
+
+Asked for on 2026-10-11 after number fields in the portal showed their values far right of their labels. Figma's Input Field is left-aligned for every type, Currency included; code had right-aligned every number input (P-039).
+
+| Where | Rule |
+|---|---|
+| **Form inputs** (text, number, currency, year, phone, date) | **Left-aligned**, always. Width fits the expected value: short values (year, count, rate, percent) use a short input (FormV2 `props: { width: 'short' }`, 124px) under the label; names, addresses and money keep the column width. Money is formatted (`$1,000,000`), still left-aligned |
+| **Table-style entry** (EMR / TRIR / workforce matrices) | The table **hugs its content**, never stretched to the form width. Inputs 124px, left-aligned, form size, headers left over them, so each value sits next to its row label. Too wide for the screen: the table scrolls inside its own box |
+| **Read-only numbers in a table** (record limits, section scores, repeat-table values, queue columns) | **Right-aligned**, `tabular-nums`, header right over them: values are compared down a column |
+| **Editing in a data-grid cell** | Right-aligned, matching the read-only column (DataGrid NumberEditor; InputV2 `align="right"` for any other in-column input) |
+
+- Don't right-align to "line up" inputs of different widths in a form; line them up on the left edge with the labels.
+- A scroll box that contains a visually hidden (`sr-only`) label must be `relative`, or the label escapes it and widens the page (F-064).
+- Check: at 1440 / 1024 / 390, every value sits under or next to its own label; no table input wider than its value needs; no horizontal page overflow.
+

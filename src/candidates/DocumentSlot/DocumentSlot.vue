@@ -5,7 +5,12 @@
        (compact) and in the Documents list (full).
        Visual rule (2026-10-09 restyle): no card. In a list the parent draws the hairlines between slots; under a form
        field a single left rule ties the slot to its field. Status is a StatusChip only when the user must act
-       (rejected / failed); otherwise a muted word. The message carries colour only for error and warning tones. -->
+       (rejected / failed); otherwise a muted word. The message carries colour only for error and warning tones.
+       Interactive (CANDIDATE 2026-10-11): choosing or dropping a file emits `upload` ({ doc, files, mode }); the page
+       uploads and validates it and feeds the result back through `doc` (processing with `progress`, then the status).
+       Replace / Upload a different file / Upload the renewed document / Add the missing form reopen the zone (Cancel
+       closes it). A wrong type or a file over 25 MB is refused in place; an upload in progress can be cancelled
+       (`cancel`). `doc.uploadError` (set by the page) shows a failed transfer until dismissed. -->
   <section class="document-slot flex flex-col gap-space-12" :class="compact ? 'pb-space-12 pt-space-4' : 'py-space-16'" :aria-labelledby="titleId">
     <header class="flex flex-wrap items-start justify-between gap-space-8">
       <div class="flex min-w-0 flex-col gap-space-2">
@@ -20,18 +25,52 @@
       <li v-for="r in doc.requirements" :key="r">{{ r }}</li>
     </ul>
 
-    <!-- Needs an upload: empty, or rejected at intake. -->
+    <!-- Read-only (submitted, nothing requested): no upload zone; a missing optional document just says so. -->
+    <p v-if="readonly && !doc.status" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">Not uploaded.</p>
+    <!-- Uploading, then checking: progress, the file name, and an X that cancels. -->
     <DropArea
-      v-if="!doc.status || doc.status === 'rejected'"
+      v-else-if="doc.status === 'processing'"
       size="small"
-      :state="doc.status === 'rejected' ? 'error' : 'default'"
-      :error-message="doc.status === 'rejected' ? doc.message : ''"
-      browse-button-label="Choose file"
+      state="uploading"
+      :file-name="primaryFile.name"
+      :progress="doc.progress === undefined ? 60 : doc.progress"
+      :uploading-message="doc.message"
+      :show-close-button="!!doc.cancellable"
+      close-button-aria-label="Cancel upload"
+      @on-clear="$emit('cancel', { doc })"
+    />
+    <!-- A refusal in place (wrong type, too large, transfer failed): the X dismisses it and reopens the zone. -->
+    <DropArea
+      v-else-if="!readonly && refusal"
+      size="small"
+      state="error"
+      :error-message="refusal"
+      close-button-aria-label="Dismiss"
+      @on-clear="dismiss"
+    />
+    <!-- Rejected at intake: the reason, until the user picks another file. -->
+    <DropArea
+      v-else-if="!readonly && doc.status === 'rejected' && !picking"
+      size="small"
+      state="error"
+      :error-message="doc.message"
+      close-button-aria-label="Upload a different file"
+      @on-clear="picking = true"
+    />
+    <!-- Needs an upload, or the user asked to replace / add. -->
+    <DropArea
+      v-else-if="!readonly && (!doc.status || picking)"
+      size="small"
+      state="default"
+      :multiple="multiple"
+      accept=".pdf,.jpg,.jpeg,.png"
+      :max-file-size="maxBytes"
+      :browse-button-label="multiple ? 'Choose files' : 'Choose file'"
       :browse-button-icon="null"
       media-types-text="PDF, JPG or PNG, up to 25 MB"
+      @on-upload="onUpload"
+      @file-rejected="onRefused"
     />
-    <!-- Processing: the zone shows progress. -->
-    <DropArea v-else-if="doc.status === 'processing'" size="small" state="uploading" :file-name="primaryFile.name" :progress="60" :uploading-message="doc.message" />
     <!-- Uploaded and checked: file row + message. -->
     <div v-else class="flex flex-col gap-space-8">
       <div v-for="f in files" :key="f.name" class="flex items-center gap-space-8 font-label text-fontsize-14 leading-lineheight-20">
@@ -48,9 +87,10 @@
       </dl>
     </div>
 
-    <footer v-if="doc.status && doc.status !== 'processing'" class="flex flex-wrap items-center gap-space-16">
-      <Button :label="doc.status === 'rejected' ? 'Upload a different file' : 'Replace file'" color-scheme="primary" variant="text" size="small" />
-      <Button v-if="doc.extracted" :label="showExtracted ? 'Hide extracted details' : 'View extracted details'" color-scheme="primary" variant="text" size="small" @onClick="showExtracted = !showExtracted" />
+    <footer v-if="doc.status && doc.status !== 'processing' && !refusal" class="flex flex-wrap items-center gap-space-16">
+      <Button native-type="button" v-if="!readonly && !picking && doc.status !== 'rejected'" :label="actionLabel" color-scheme="primary" variant="text" size="small" @onClick="open(missingForms ? 'add' : 'replace')" />
+      <Button native-type="button" v-if="picking && doc.status" label="Cancel" color-scheme="secondary" variant="minimal" size="small" @onClick="picking = false" />
+      <Button native-type="button" v-if="doc.extracted" :label="showExtracted ? 'Hide extracted details' : 'View extracted details'" color-scheme="primary" variant="text" size="small" @onClick="showExtracted = !showExtracted" />
     </footer>
   </section>
 </template>
@@ -73,9 +113,26 @@ export default {
     doc: { type: Object, required: true },
     /** Under a form field: hides the requirements list once a file exists. */
     compact: { type: Boolean, default: false },
+    /** CANDIDATE 2026-10-11: the slot can't be changed (application submitted, and this document wasn't requested):
+        no upload zone, no Replace. */
+    readonly: { type: Boolean, default: false },
   },
   data() {
-    return { showExtracted: false };
+    return {
+      showExtracted: false,
+      /** The zone is open to replace or add a file. */
+      picking: false,
+      mode: 'replace',
+      /** A file refused in place: wrong type or too large. */
+      refused: '',
+      maxBytes: 25 * 1024 * 1024,
+    };
+  },
+  watch: {
+    // A new result (or a new upload) closes the zone.
+    'doc.status'() {
+      this.picking = false;
+    },
   },
   computed: {
     titleId() {
@@ -100,8 +157,46 @@ export default {
       if (this.doc.required === 'site-security') return 'Required for this site';
       return this.doc.required ? 'Required' : 'Optional';
     },
+    /** A refusal to show in the zone: refused here (type / size) or a failed transfer reported by the page. */
+    refusal() {
+      return this.refused || this.doc.uploadError || '';
+    },
+    /** Several files in one slot: one per year (OSHA 300A) or per person (certification cards). */
+    multiple() {
+      return !!this.doc.count || this.doc.id === 'cert-cards';
+    },
+    missingForms() {
+      return !!this.doc.count && this.files.length < this.doc.count;
+    },
+    actionLabel() {
+      if (this.missingForms) return this.doc.count - this.files.length === 1 ? 'Add the missing form' : 'Add the missing forms';
+      if (this.doc.status === 'expiring' || this.doc.status === 'expired') return 'Upload the renewed document';
+      return 'Replace file';
+    },
     messageClass() {
       return MESSAGE[this.status ? this.status.tone : ''] || 'text-text-subtle';
+    },
+  },
+  methods: {
+    open(mode) {
+      this.mode = mode;
+      this.picking = true;
+    },
+    onUpload({ files }) {
+      this.refused = '';
+      this.$emit('upload', { doc: this.doc, files, mode: this.doc.status === 'rejected' ? 'replace' : this.mode });
+      this.mode = 'replace';
+    },
+    onRefused({ reasons }) {
+      const r = reasons[0];
+      this.refused = r.reason === 'size'
+        ? `${r.file.name} is larger than 25 MB. Upload a smaller file or a compressed PDF.`
+        : `${r.file.name} isn’t a PDF, JPG or PNG.`;
+    },
+    dismiss() {
+      if (this.refused) this.refused = '';
+      else this.$emit('dismiss-error', { doc: this.doc });
+      this.picking = true;
     },
   },
 };

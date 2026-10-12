@@ -25,6 +25,10 @@ No card (revised 2026-10-09, D-17). Full: a block the parent list separates with
 
 Events (to add when wired): `upload(file)`, `replace`.
 
+- `readonly` (Boolean, 2026-10-11): the slot can't be changed (application submitted and the document wasn't requested). No upload zone, no Replace; a missing optional document reads “Not uploaded.”
+
+- Interactive (2026-10-11): emits `upload` ({ doc, files, mode: 'replace' | 'add' }) when a file is chosen or dropped, `cancel` ({ doc }) from the uploading X, `dismiss-error` ({ doc }) when a reported transfer error is closed. The page owns the upload: it sets `doc.status = 'processing'` with `doc.progress` (0–100), `doc.message`, `doc.cancellable`, then the result; `doc.uploadError` shows a failed transfer. The slot itself refuses wrong types and files over 25 MB (DropArea `accept`, `max-file-size`), and reopens the zone for Replace / Upload a different file / Upload the renewed document / Add the missing form (with Cancel).
+
 ## Tokens
 `border/subtle`, `text/default`, `text/subtle`, `text/soft`, `text/error/default`, `text/warning/low`, `icon/subtle`, `space-2/8/12/16/20`; StatusChip statuses via `toneToChipStatus` for rejected (error) and failed (error, strong).
 

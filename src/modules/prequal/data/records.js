@@ -12,6 +12,7 @@ import { companyById, requestById, requests, reviewerById, templates } from './i
 import { requestStatus, LIFECYCLE, OUTCOME } from '../status';
 import * as review from './review';
 import { RECORDS } from './recordDetails';
+import { session, eventsFor } from './session';
 
 const addDays = (iso, days) => {
   const d = new Date(`${iso}T00:00:00`);
@@ -143,12 +144,39 @@ function genericRecord(r) {
   };
 }
 
+const KEY_DOCS = new Set(['coi', 'bond', 'license', 'emr']);
+const AUDIT_KIND = (a) => (/^Overrode|^Dismissed/.test(a) ? 'override' : /^Submitted|^Sent the invitation|^Opened/.test(a) ? 'submission' : /^Uploaded|renewal/i.test(a) ? 'renewal' : 'decision');
+
+/** A record created by an approval in the demo session (./session.js): the decision's trades, limits and conditions;
+ *  the documents as the review holds them; the audit trail from the session's history. */
+function sessionRecord(r) {
+  const d = session.decisions[r.id];
+  if (!d || d.kind === 'reject') return null;
+  const company = companyById[r.company];
+  const rv = review.reviewFor(r.id);
+  const docs = rv ? rv.documents.filter((x) => x.status !== 'superseded') : [];
+  const resolved = session.resolutions[r.id] || {};
+  return {
+    id: r.id,
+    requestId: r.id,
+    approvedBy: 'jordan',
+    approvedOn: d.on,
+    validUntil: d.validUntil,
+    validUntilDriver: 'Earliest key document',
+    trades: d.trades.map((t) => ({ trade: t, csi: company.csi, scope: 'All projects', single: d.single, aggregate: d.aggregate })),
+    conditions: (d.conditions || []).map((label, i) => ({ id: `c${i}`, label, status: 'open', note: `Set at approval, ${d.on}` })),
+    overrides: Object.values(resolved).filter((x) => x.resolution === 'overridden').map((x) => ({ finding: x.title || 'Finding', reason: x.note, actor: x.by, at: x.at })),
+    documents: docs.map((x) => ({ id: x.id, label: x.label, issued: d.on, expires: x.validThrough || null, key: KEY_DOCS.has(x.id), renewal: null, note: x.note, restricted: !!x.restricted })),
+    audit: eventsFor(r.id).map((e) => ({ at: e.at, actor: e.actor, kind: AUDIT_KIND(e.action), action: `${e.action}.`.replace(/\.\.$/, '.') })),
+  };
+}
+
 /** The record for a request id, joined with its request and company; null when the request isn't approved. */
 export function recordFor(requestId) {
   const r = requestById[requestId];
   if (!r) return null;
   if (!DETAILED[requestId] && (!r.outcome || r.outcome === 'not-qualified')) return null;
-  const base = DETAILED[requestId] || genericRecord(r);
+  const base = DETAILED[requestId] || sessionRecord(r) || genericRecord(r);
   const reviewer = reviewerById[base.approvedBy];
   return {
     outcome: r.outcome,
@@ -181,10 +209,16 @@ export function nextRenewal(record) {
  * outcome the review prototype's approval would create.
  */
 export function recordRows() {
+  // A company's row is its latest approval; a rejection only shows when there is no approval (rejecting a new,
+  // larger request doesn't revoke an existing qualification). 2026-10-11, with the end-to-end demo (D-29).
   const latest = {};
+  const approved = (r) => r.outcome !== 'not-qualified';
   requests.filter((r) => r.workflow === 'closed' && r.outcome).forEach((r) => {
     const prev = latest[r.company];
-    if (!prev || r.activity[0] > prev.activity[0]) latest[r.company] = r;
+    const better = !prev
+      || (approved(r) && !approved(prev))
+      || (approved(r) === approved(prev) && r.activity[0] > prev.activity[0]);
+    if (better) latest[r.company] = r;
   });
   return Object.values(latest).map((r) => {
     const company = companyById[r.company];
@@ -213,6 +247,11 @@ export function recordRows() {
       templateName: templates[r.template],
     };
   });
+}
+
+/** Request ids that have a record now, including approvals in the demo session (sandbox record picker). */
+export function recordIds() {
+  return ['req-001', ...requests.filter((r) => r.id !== 'req-001' && r.outcome && r.outcome !== 'not-qualified').map((r) => r.id)];
 }
 
 /** Request ids that have a record (for the picker notice and tests). */

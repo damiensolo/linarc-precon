@@ -32,7 +32,7 @@
     <section v-if="history.length" class="flex flex-col gap-space-8">
       <h3 class="m-0 text-fontsize-14 font-bold leading-lineheight-20 text-text-default">Recent activity</h3>
       <ol class="m-0 flex list-none flex-col gap-space-8 p-0">
-        <li v-for="h in history.slice(0, 3)" :key="h.at" class="flex flex-col text-fontsize-12 leading-lineheight-16">
+        <li v-for="(h, i) in history.slice(0, 3)" :key="`${h.at}-${i}`" class="flex flex-col text-fontsize-12 leading-lineheight-16">
           <span class="text-text-default">{{ h.actor }} · {{ h.action }}</span>
           <span class="text-text-subtle">{{ $moment(h.at).format('D MMM, h:mm a') }}</span>
         </li>

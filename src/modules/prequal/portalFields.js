@@ -1,22 +1,22 @@
 // FormV2 wiring for the subcontractor portal: custom field types (document slot, notice, repeat, matrix, computed)
-// and the builders that turn a section from data/portal.js into a FormV2 schema + values object.
+// and the builders that turn a section (data/portal.js, data/portalRequests.js) into a FormV2 schema + values object.
 import { baseFieldProps } from '@/componentsV2/FormV2/fields/_baseFieldProps';
 import DocumentSlot from '~/candidates/DocumentSlot/DocumentSlot.vue';
 import InlineNotice from '~/candidates/InlineNotice/InlineNotice.vue';
 import RepeatField from '~/candidates/FormTableFields/RepeatField.vue';
 import MatrixField from '~/candidates/FormTableFields/MatrixField.vue';
 import { currency } from '~/candidates/FormTableFields/format';
-import { documents } from './data/portal';
-
-const docById = Object.fromEntries(documents.map((d) => [d.id, d]));
-
-/** `document` field: the DocumentSlot for `field.props.slotId`, compact, directly under the field it evidences. */
+/** `document` field: the request's DocumentSlot (`field.props.doc`), compact, directly under the field it evidences.
+ *  Its upload events go to the portal page through `portalUploads` (provided by prequal-portal; FormV2 sits between). */
 const DocumentField = {
   name: 'DocumentField',
   props: { ...baseFieldProps },
+  inject: { portalUploads: { default: null } },
   render(h) {
-    const doc = docById[this.field.props.slotId];
-    return doc ? h(DocumentSlot, { props: { doc, compact: true } }) : h('span');
+    const { doc } = this.field.props;
+    const u = this.portalUploads;
+    const on = u ? { upload: u.upload, cancel: u.cancel, 'dismiss-error': u.dismissError } : {};
+    return doc ? h(DocumentSlot, { props: { doc, compact: true, readonly: !!doc.locked }, on }) : h('span');
   },
 };
 
@@ -43,19 +43,23 @@ const ComputedField = {
 
 export const portalFieldTypes = { document: DocumentField, notice: NoticeField, computed: ComputedField, repeat: RepeatField, matrix: MatrixField };
 
-// Column definitions for repeat and matrix fields, by field id.
+// Column definitions for repeat and matrix fields, by field id. For the row editor (RepeatField, 2026-10-11): `input`
+// (text | number | date | select) overrides the type the format implies, `options` for selects, `optional` columns
+// may be left empty, `wide` spans the editor's two columns.
+const STATES = ['AZ', 'CA', 'NV', 'OR', 'WA'];
+const SECTOR_OPTIONS = ['Healthcare (HCAI)', 'Healthcare', 'Education (public works)', 'Public works', 'Commercial office', 'Industrial', 'Multifamily', 'Data centers', 'Life sciences', 'Hospitality', 'Commercial'];
 const COLUMNS = {
   principals: [{ key: 'name', label: 'Name' }, { key: 'title', label: 'Title' }, { key: 'ownership', label: 'Ownership', format: 'percent' }],
-  licenses: [{ key: 'state', label: 'State' }, { key: 'number', label: 'Number' }, { key: 'classifications', label: 'Classification' }, { key: 'expiry', label: 'Expires', format: 'date' }],
+  licenses: [{ key: 'state', label: 'State', input: 'select', options: STATES }, { key: 'number', label: 'Number' }, { key: 'classifications', label: 'Classification' }, { key: 'expiry', label: 'Expires', format: 'date' }],
   businessLicenses: [{ key: 'jurisdiction', label: 'Jurisdiction' }, { key: 'number', label: 'Number' }, { key: 'expiry', label: 'Expires', format: 'date' }],
-  branches: [{ key: 'address', label: 'Address' }],
-  pastProjects: [{ key: 'name', label: 'Project' }, { key: 'city', label: 'Location' }, { key: 'owner', label: 'Owner' }, { key: 'sector', label: 'Sector' }, { key: 'value', label: 'Value', format: 'currency' }, { key: 'finish', label: 'Finished', format: 'date' }, { key: 'reference.name', label: 'Reference' }],
-  specialProjects: [{ key: 'condition', label: 'Condition' }, { key: 'project', label: 'Project' }, { key: 'value', label: 'Value', format: 'currency' }, { key: 'reference', label: 'Reference' }],
-  keyPersonnel: [{ key: 'name', label: 'Name' }, { key: 'role', label: 'Role' }, { key: 'years', label: 'Years' }, { key: 'certs', label: 'Certifications' }, { key: 'resume', label: 'Resume' }],
-  projectRefs: [{ key: 'name', label: 'Name' }, { key: 'company', label: 'Company' }, { key: 'project', label: 'Project' }, { key: 'email', label: 'Email' }],
+  branches: [{ key: 'address', label: 'Address', wide: true }],
+  pastProjects: [{ key: 'name', label: 'Project' }, { key: 'city', label: 'Location' }, { key: 'owner', label: 'Owner' }, { key: 'sector', label: 'Sector', input: 'select', options: SECTOR_OPTIONS }, { key: 'value', label: 'Value', format: 'currency' }, { key: 'finish', label: 'Finished', format: 'date' }, { key: 'reference.name', label: 'Reference' }],
+  specialProjects: [{ key: 'condition', label: 'Condition', input: 'select', options: ['Healthcare (HCAI / OSHPD)', 'Occupied renovation, ICRA', 'Public works (prevailing wage)', 'Secure site'] }, { key: 'project', label: 'Project' }, { key: 'value', label: 'Value', format: 'currency' }, { key: 'reference', label: 'Reference' }],
+  keyPersonnel: [{ key: 'name', label: 'Name' }, { key: 'role', label: 'Role' }, { key: 'years', label: 'Years', input: 'number' }, { key: 'certs', label: 'Certifications' }, { key: 'resume', label: 'Resume', optional: true }],
+  projectRefs: [{ key: 'name', label: 'Name' }, { key: 'company', label: 'Company' }, { key: 'project', label: 'Project' }, { key: 'email', label: 'Email' }, { key: 'phone', label: 'Phone', optional: true }],
   supplierRefs: [{ key: 'name', label: 'Supplier' }, { key: 'contact', label: 'Contact' }, { key: 'email', label: 'Email' }],
-  bankRef: [{ key: 'bank', label: 'Bank' }, { key: 'contact', label: 'Contact' }],
-  diversity: [{ key: 'type', label: 'Type' }, { key: 'agency', label: 'Agency' }, { key: 'number', label: 'Number' }, { key: 'expiry', label: 'Expires', format: 'date' }],
+  bankRef: [{ key: 'bank', label: 'Bank' }, { key: 'contact', label: 'Contact' }, { key: 'phone', label: 'Phone', optional: true }],
+  diversity: [{ key: 'type', label: 'Type', input: 'select', options: ['DBE', 'MBE', 'WBE', 'SBE', 'DVBE', 'LGBTBE'] }, { key: 'agency', label: 'Agency' }, { key: 'number', label: 'Number' }, { key: 'expiry', label: 'Expires', format: 'date' }],
   emr: [{ key: 'year', label: 'Year' }, { key: 'value', label: 'EMR' }],
   injury: [{ key: 'year', label: 'Year' }, { key: 'trir', label: 'TRIR' }, { key: 'dart', label: 'DART' }, { key: 'hours', label: 'Hours worked', format: 'number' }],
   revenue: [{ key: 'year', label: 'Year' }, { key: 'value', label: 'Revenue', format: 'currency' }],
@@ -77,8 +81,9 @@ const withSelected = (list, selected) => [...list, ...(selected || []).filter((v
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const WIDE = new Set(['repeat', 'matrix', 'address', 'multiselect', 'document', 'notice']);
 
-/** FormV2 schema for one portal section. */
-export function sectionSchema(section) {
+/** FormV2 schema for one portal section; `documents` are the request's slots (evidence shown under its field). */
+export function sectionSchema(section, documents = []) {
+  const docById = Object.fromEntries(documents.map((d) => [d.id, d]));
   const fields = [];
   for (const f of section.fields) {
     const base = { id: f.id, label: f.label, colSpan: WIDE.has(f.type) ? 'full' : 1 };
@@ -99,14 +104,20 @@ export function sectionSchema(section) {
         fields.push({ ...base, type: 'radio', options: [{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }], props: { inline: true } });
         break;
       case 'number':
-        fields.push({ ...base, type: 'number' });
+        // Short values (years, counts): a short, left-aligned input under the label, not the whole column (P-039).
+        fields.push({ ...base, type: 'number', props: { width: 'short' } });
         break;
       case 'repeat':
         // Tables are subsections: they draw their own 16px heading (props.title); the form label is left empty so
         // FieldRenderer draws none (it has no per-field labelPosition) (D-17).
+        // Required tables need a row; a minimum is a rule too, so Save and continue says what's missing.
+        if (f.required) base.rules = [{ type: 'required', message: f.minimum ? `Add at least ${f.minimum}` : 'Add at least one' }];
+        if (f.minimum) base.rules = [...(base.rules || []), { type: 'minLength', value: f.minimum, message: `Add at least ${f.minimum}` }];
         fields.push({ ...base, label: '', type: 'repeat', props: { columns: COLUMNS[f.id], minimum: f.minimum, addLabel: ADD_LABEL[f.id] || 'Add', title: f.label, required: !!f.required } });
         break;
       case 'matrix':
+        // Every value cell must be filled (the first column is the row label).
+        base.rules = [{ type: 'custom', message: 'Fill in every value', validator: (v) => (Array.isArray(v) && v.length > 0 && v.every((row) => Object.values(row).every((x) => x !== null && x !== undefined && x !== ''))) }];
         fields.push({ ...base, label: '', type: 'matrix', props: { columns: COLUMNS[f.id], title: f.label, required: !!f.required } });
         break;
       case 'computed':
@@ -116,7 +127,7 @@ export function sectionSchema(section) {
         fields.push({ ...base, type: 'text' });
     }
     if (f.mismatch) fields.push({ id: `${f.id}__notice`, type: 'notice', colSpan: 'full', labelPosition: 'hidden', props: { tone: 'warning', message: f.mismatch } });
-    if (f.evidence) fields.push({ id: `${f.id}__doc`, type: 'document', colSpan: 'full', props: { slotId: f.evidence } });
+    if (f.evidence && docById[f.evidence]) fields.push({ id: `${f.id}__doc`, type: 'document', colSpan: 'full', props: { doc: docById[f.evidence] } });
   }
   // 24px between fields (was 16): with the table subsections' own padding this gives ~40px between blocks (D-17).
   return { sections: [{ id: section.id, layout: { columns: 2, gap: '24px' }, fields }] };

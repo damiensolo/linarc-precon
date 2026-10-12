@@ -60,7 +60,7 @@ export const requests = [
   R('req-005', 'ironline', { project: 'Eastgate Data Center', template: 'std-sp', workflow: 'under-review', outcome: null, lifecycle: null, score: 84, confidence: 71, recommendation: 'accept', knockouts: 0, findings: 2, checks: [12, 14], submittedOn: '2026-10-01', activity: ['2026-10-06', 'Broker confirmation received'], reviewer: 'priya', single: 3200000, aggregate: 6000000, validUntil: null }),
   R('req-006', 'cascade', { project: 'Northern Heights', template: 'std-sp', workflow: 'info-requested', outcome: null, lifecycle: null, score: 61, confidence: 48, recommendation: 'review', knockouts: 0, findings: 6, checks: [11, 14], submittedOn: '2026-09-28', activity: ['2026-10-02', 'Information requested: updated COI'], reviewer: 'jordan', single: 1100000, aggregate: 2000000, validUntil: null }),
   R('req-007', 'pioneer', { project: 'Riverside Commons', template: 'std-sp', workflow: 'info-requested', outcome: null, lifecycle: null, score: 77, confidence: 59, recommendation: 'review', knockouts: 0, findings: 2, checks: [13, 14], submittedOn: '2026-09-30', activity: ['2026-10-05', 'Information requested: EMR ratesheet'], reviewer: 'priya', single: 800000, aggregate: 1800000, validUntil: null }),
-  R('req-008', 'northstar', { project: 'Harbor Point Clinic', template: 'hc-sp', workflow: 'in-progress', outcome: null, lifecycle: null, score: null, confidence: null, recommendation: null, knockouts: 0, findings: 0, checks: [4, 14], submittedOn: null, activity: ['2026-10-07', 'Safety section completed (60%)'], reviewer: null, single: 1300000, aggregate: 2600000, validUntil: null }),
+  R('req-008', 'northstar', { project: 'Harbor Point Clinic', template: 'hc-sp', workflow: 'in-progress', outcome: null, lifecycle: null, score: null, confidence: null, recommendation: null, knockouts: 0, findings: 0, checks: [4, 14], submittedOn: null, activity: ['2026-10-07', 'Safety section completed (67%)'], reviewer: null, single: 1300000, aggregate: 2600000, validUntil: null }),
   R('req-009', 'redwood', { project: 'Eastgate Data Center', template: 'std-sp', workflow: 'in-progress', outcome: null, lifecycle: null, score: null, confidence: null, recommendation: null, knockouts: 0, findings: 0, checks: [2, 14], submittedOn: null, activity: ['2026-10-06', 'Company section completed (25%)'], reviewer: null, single: 2100000, aggregate: 4000000, validUntil: null }),
   R('req-010', 'keystone', { project: 'Northern Heights', template: 'pw-md', workflow: 'in-progress', outcome: null, lifecycle: null, score: null, confidence: null, recommendation: null, knockouts: 0, findings: 0, checks: [6, 15], submittedOn: null, activity: ['2026-10-08', 'Financial statements uploaded (80%)'], reviewer: null, single: 1700000, aggregate: 3500000, validUntil: null }),
   R('req-011', 'harbor', { project: 'Riverside Commons', template: 'pw-md', workflow: 'in-progress', outcome: null, lifecycle: null, score: null, confidence: null, recommendation: null, knockouts: 0, findings: 0, checks: [3, 15], submittedOn: null, activity: ['2026-10-03', 'Portal opened (10%)'], reviewer: null, single: 2400000, aggregate: 5000000, validUntil: null }),
@@ -97,3 +97,11 @@ export function requestRows() {
 }
 
 export const requestById = byId(requests);
+
+/** Sandbox record picker options (App.vue): `REQ-004 · Bluewater Plumbing Co. · Ready for review`. */
+export function requestOptions(ids = requests.map((r) => r.id)) {
+  return ids.map((id) => {
+    const r = requestById[id];
+    return { value: id, label: `${id.toUpperCase()} · ${companyById[r.company].name} · ${requestStatus(r).label}` };
+  });
+}

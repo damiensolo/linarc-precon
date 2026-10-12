@@ -37,7 +37,17 @@
 
     <!-- Decide -->
     <template v-else-if="mode === 'decide'">
-      <section v-if="infoRequest" class="flex flex-col gap-space-8">
+      <!-- The subcontractor answered (portal Send response): what came back; the decision is next. -->
+      <section v-if="infoRequest && infoRequest.respondedAt" class="flex flex-col gap-space-8">
+        <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Response received</h2>
+        <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">
+          The subcontractor responded on {{ $moment(infoRequest.respondedAt).format('D MMM') }} to the request {{ infoRequest.by }} sent on {{ $moment(infoRequest.on).format('D MMM') }}. Check the new documents, then decide.
+        </p>
+        <ul class="m-0 flex list-none flex-col gap-space-4 p-0 text-fontsize-14 leading-lineheight-20 text-text-default">
+          <li v-for="label in infoRequest.received" :key="label">{{ label }}</li>
+        </ul>
+      </section>
+      <section v-else-if="infoRequest" class="flex flex-col gap-space-8">
         <h2 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Waiting for the subcontractor</h2>
         <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">
           {{ infoRequest.by }} asked for {{ requestedItems.length }} item{{ requestedItems.length === 1 ? '' : 's' }} on {{ $moment(infoRequest.on).format('D MMM') }}; due {{ $moment(infoRequest.dueOn).format('D MMM') }}.
@@ -73,7 +83,7 @@
       <section class="flex flex-col gap-space-8">
         <h3 class="m-0 text-fontsize-14 font-bold leading-lineheight-20 text-text-default">Recent activity</h3>
         <ol class="m-0 flex list-none flex-col gap-space-8 p-0">
-          <li v-for="h in history.slice(0, 3)" :key="h.at" class="flex flex-col text-fontsize-12 leading-lineheight-16">
+          <li v-for="(h, i) in history.slice(0, 3)" :key="`${h.at}-${i}`" class="flex flex-col text-fontsize-12 leading-lineheight-16">
             <span class="text-text-default">{{ h.actor }} · {{ h.action }}</span>
             <span class="text-text-subtle">{{ $moment(h.at).format('D MMM, h:mm a') }}</span>
           </li>
@@ -367,7 +377,21 @@ export default {
         () => {
           this.done = DONE[kind];
           this.mode = 'done';
-          this.$emit('decided', kind);
+          // What was decided, for the page to record (data/session.js decide()).
+          const a = this.approval;
+          const num = (v) => Number(String(v).replace(/[^0-9.]/g, ''));
+          this.$emit('decided', {
+            kind,
+            trades: a.trades || [],
+            single: num(a.single),
+            aggregate: num(a.aggregate),
+            validUntil: this.$moment(a.validUntil).isValid() ? this.$moment(a.validUntil).format('YYYY-MM-DD') : a.validUntil,
+            conditions: kind === 'conditions' ? this.conditions.filter((c) => a.conditions.includes(c.id)).map((c) => c.label) : [],
+            items: this.infoForm.items,
+            labels: this.findings.filter((f) => this.infoForm.items.includes(f.id)).map((f) => f.title),
+            message: kind === 'request' ? this.infoForm.message : this.rejection.message,
+            reason: this.rejection.reason,
+          });
         },
       );
     },

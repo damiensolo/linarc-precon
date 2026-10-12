@@ -11,7 +11,7 @@
     <section v-for="g in groups" :key="g.name" class="flex flex-col">
       <h2 class="m-0 border-b border-border-subtle pb-space-8 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ g.name }}</h2>
       <div class="flex flex-col divide-y divide-border-subtle">
-        <DocumentSlot v-for="d in g.docs" :key="d.id" :doc="d" />
+        <DocumentSlot v-for="d in g.docs" :key="d.id" :doc="d" :readonly="!!d.locked" @upload="$emit('upload', $event)" @cancel="$emit('cancel', $event)" @dismiss-error="$emit('dismiss-error', $event)" />
       </div>
     </section>
   </div>

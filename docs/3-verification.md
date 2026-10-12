@@ -50,6 +50,10 @@ For any screen that loads data through `createLoad` (`docs/5-ui-patterns.md` §6
 
 **Navigation:** a link between screens must not reload. Set `window.__same = 1`, click, and check it survives; a CDP screencast (`Page.startScreencast`) of the click should have no frame where the top nav is blank.
 
+## Open-and-pick check for popovers (added 2026-10-11, F-065)
+
+`yarn shot` never opens a popover, so a date picker, select or menu can look right and still fail. For each one a screen adds: open it in a script, check the panel has a real size and content (a date grid of 42 cells, the option list), pick a value, and read it back from the field, in both themes, with console errors collected after the open.
+
 ## Half-pixel check (added 2026-10-11, F-060)
 
 When a fixed-size item (badge, icon button) is centred in a box that has a CSS border, measure its `getBoundingClientRect().top` relative to the box at `deviceScaleFactor` 1 and 1.25, in every state. A fractional top (15.5) means a blurred edge and a digit or glyph that snaps apart from its container. Figma strokes take no layout space, so draw such lines as inset box-shadows or outlines, not borders. 2x screenshots hide this.

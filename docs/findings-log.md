@@ -517,9 +517,54 @@ Why it mattered: it isn't part of the product; reviewers can't tell sandbox scaf
 What changed: removed; every request opens the Apex review exactly as the app would render it. Rule: explain mock-data gaps in the docs, never in the screen.
 Case study: N.
 
-## F-062 · 2026-10-11 · One mocked review hid three states nobody had designed
+## F-064 · 2026-10-11 · One mocked review hid three states nobody had designed (renumbered from F-062, which a parallel session also used)
 Tags: prototype-data, design-gap
 What happened: the review screen only had Apex's data, so every row opened Apex. Writing a review for each of the 24 requests showed that three states had no design: a request the sub hasn't submitted (opened a review that can't exist), a request waiting on information the reviewer asked for (nothing said what was asked), and a decided request (the four decision buttons stayed live on a closed review).
 Why it mattered: a demo walks through rows at random; with one review, every click told the same story, and the gaps only show when the data varies.
 What changed: per-request reviews, records and tracking data (D-26); the tracking view, a read-only decided panel and a waiting-for-subcontractor block; assumptions A7–A9 for product. A scratchpad script checks every review against its list row (open findings, knockouts, checks, weighted section scores, valid until = earliest key document), so the numbers stay consistent when data is edited.
 Case study: Y. Varied, internally consistent mock data is a design tool, not just demo polish.
+
+## F-062 · 2026-10-11 · Hiding a filling sibling un-pins the user menu in Figma's Top Nav Bar
+Tags: figma, design-system
+What happened: on the Documentation app map (Subcontractor portal, 3792:5020) all four Top Nav Bar `Module=Company` instances showed the user menu packed left against the logo. The portal hides Top Nav Modules (the external user has no modules), and the library's Nav Bar only kept the menu on the right because Dashboard filled the space under `SPACE_BETWEEN`. With one visible child, `SPACE_BETWEEN` packs it to the start. Three instances already carried an alignment override that didn't help; one had `MIN`.
+Why it mattered: the portal reference didn't look like the app (code keeps the menu right), and any screen that hides the modules would repeat it.
+What changed: design system Nav Bar (40010567:33639, both sizes) now packs right (`MAX`). With Dashboard visible it renders identically (checked: same child positions), with it hidden the menu stays pinned right; description updated. The four app-map instances' Nav Bar override set to `MAX` so they're right before the library is published.
+Rule for pushing screens to Figma: after hiding a layer in an instance, check that what remains still sits where the component intends (a filling sibling often does the pinning).
+Case study: N.
+
+## F-063 · 2026-10-11 · Side nav selector was blue, not the module's teal
+Tags: design-system, prototype-shell
+What happened: the selected rail item's selector bar rendered blue on every Prequalification screen. Figma's Side Nav components all use a black tile (`surface/strong`) plus a selector in the module accent (Precon: `icon/accent/teal`, matching the top nav's Precon teal). SideNavV2 takes the accent through `selector-color` and falls back to `surface/primary` blue; PrequalShell never passed it.
+What changed: PrequalShell passes `selector-color="var(--icon-accent-teal)"`. Measured: light #14b8a6, dark #2dd4bf, no console errors. No library change needed.
+Rule: a module shell sets both its top-nav `selectedColor` and its rail `selector-color` to the module accent.
+Case study: N.
+
+## F-065 · 2026-10-11 · Wide tables squeezed the portal's section nav
+Tags: layout, candidate
+What happened: with five realistic past projects (long owner and sector names), the Experience section's tables were wider than the content column; the grid item grew and AppLayout shrank the 288px left panel, clipping the nav's checkmarks and “In progres”. It was already happening on Northstar with three projects, just less visibly. yarn shot reported no overflow because the page itself didn't scroll sideways.
+What changed: RepeatField and MatrixField roots are `min-w-0`; RepeatField's table sits in `overflow-x-auto` (MatrixField already had it). The table scrolls inside the field; the nav keeps its width.
+Lesson: placeholder data that is too short hides layout bugs; test list and table screens with the longest realistic values. Also: `yarn shot` couldn't save a capture whose hash held a `/` (`#req-006/insurance`); the file name now replaces it.
+Case study: N.
+
+## F-066 · 2026-10-11 · Every library Button inside a form was a submit button
+Tags: library-bug, forms
+What happened: making the portal's tables editable, “Add” in the row editor submitted the whole section form (FormV2 renders a `<form>`) and ran its validation, so the new row was lost and “Some answers are missing” appeared. `Button.vue` renders a bare `<button>`, whose default type is submit. The same was true of RepeatField's Edit / Remove, DocumentSlot's Replace and the library DropArea's Browse button: every action inside a form section submitted it.
+What changed: P-039, an additive `nativeType` prop on Button (default unset, behaviour unchanged elsewhere); DropArea's Browse and the candidates' in-form buttons pass `native-type="button"`.
+Case study: Y. A default that only bites when components are composed (a button inside a form) survives component-level stories; end-to-end flows find it.
+
+## F-064 · 2026-10-11 · Number inputs were right-aligned everywhere, and nobody had decided that
+Tags: design-system, ux
+What happened: the user found portal values at the far right of full-width fields (Year established "2009" ~500px from its label) and the EMR / TRIR tables stretched across the form with right-aligned inputs. Two sources: the library's InputV2 added `text-right` to every `type="number"` (Figma's Input Field is left-aligned for every type, Currency included), and the prototypes' MatrixField used the read-only table rule (numbers right, table full width) for data entry.
+Why it mattered: right alignment is a reading convention for comparing a column; in a form it separates the value from its label. Through the library default it reached every number field in the app.
+What changed: InputV2 left by default, `align="right"` opt-in; FormV2 TextField `props.width: 'short'`; MatrixField hugs its content with 124px left-aligned inputs (read-only stays right); RepeatField's read-only money / number / percent columns right-aligned (they were left). Portal number fields use the short width. P-039, D-26, `docs/5-ui-patterns.md` §7. Also found: a `sr-only` header inside a table's `overflow-x-auto` box escaped it (absolute positioning, no positioned ancestor) and widened the page by 254px at 390 once the table grew; the scrollers are now `relative`.
+How it was caught: user review; computed widths and page `scrollWidth` at 390 in a puppeteer script.
+Case study: Y. A component default that contradicts Figma silently becomes a product-wide pattern.
+
+## F-065 · 2026-10-11 · The date field looked right and didn't work: the sandbox had no Vuex store
+Tags: setup, design-system
+What happened: in the portal's Add project form (and the other row editors with a date: license and certification expiry), the "Finished" field showed a calendar icon but clicking it did nothing useful: the popup rendered as a 2×2px box and the console showed `Cannot read properties of undefined (reading 'getters')` from DatePicker's TableDate. The right component was in use (Figma Input Field Type=Date → FormV2 `date` → library DatePicker); DatePicker reads holidays and working days from a namespaced Vuex module that the production app and Storybook provide, and the sandbox never installed Vuex. FormV2's DateField registers a stub module, but only when a store exists. A second issue showed once it opened: the legacy DatePicker's V1 inline styles (white, 32px, #adc1d1 border) didn't match the form and stayed white in dark mode.
+Why it mattered: every date entry in the portal was unusable, and the console error only appears when the popup opens, so `yarn shot` (no interaction) never caught it.
+What changed: `src/main.js` installs Vuex with Storybook's mock `DatePicker` module (aliased to the library's vuex in `vite.config.mjs`); FormV2 DateField matches InputV2 in both themes (P-040). Also fixed InputV2's border class, which had fallen back to preflight grey (dark mode now uses Figma's border/input/default). Verified: popup opens at 250×272 with the month grid, picking the 15th fills "10/15/2026", typing works, no console errors, both themes. Rule added to the setup playbook's resolution gaps.
+Verification gap: screenshots don't open popovers. Interactive components (date pickers, selects, menus) need an open-and-pick check in a script.
+Case study: Y. A component can be correct and still fail because the host app's contract (a store) is missing.
+

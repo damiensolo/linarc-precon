@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => ({
       { find: '@development/linarc-design-components', replacement: path.resolve(DS_ROOT, 'src/build.js') },
       // Icons used in Button slots (lucide-vue re-exports + Linarc module icons)
       { find: '@development/linarc-icons', replacement: path.resolve(DS_ROOT, 'node_modules/@development/linarc-icons') },
+      // Vuex for the mock store in main.js (DatePicker reads holidays / working days from it; F-065)
+      { find: /^vuex$/, replacement: path.resolve(DS_ROOT, 'node_modules/vuex/dist/vuex.esm.js') },
       // Webpack-style `~package/...` imports in library SCSS (e.g. datepicker.scss) → the library's node_modules
       { find: /^~(?!\/)(.+)$/, replacement: path.resolve(DS_ROOT, 'node_modules') + '/$1' },
       // This sandbox's own source: `~/prototypes/...`

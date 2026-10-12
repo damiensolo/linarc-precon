@@ -49,7 +49,7 @@
 
     <section v-else-if="tab === 'history'">
       <ol class="m-0 flex list-none flex-col divide-y divide-border-subtle p-0">
-        <li v-for="h in history" :key="h.at" class="flex flex-col gap-space-2 py-space-10 font-label sm:flex-row sm:gap-space-16">
+        <li v-for="(h, i) in history" :key="`${h.at}-${i}`" class="flex flex-col gap-space-2 py-space-10 font-label sm:flex-row sm:gap-space-16">
           <span class="shrink-0 text-fontsize-12 leading-lineheight-20 tabular-nums text-text-subtle sm:basis-1/4">{{ $moment(h.at).format('D MMM YYYY · h:mm a') }}</span>
           <span class="text-fontsize-14 leading-lineheight-20 text-text-default"><strong>{{ h.actor }}</strong> {{ h.action.charAt(0).toLowerCase() + h.action.slice(1) }}</span>
         </li>

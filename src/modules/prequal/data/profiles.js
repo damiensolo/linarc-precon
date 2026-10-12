@@ -5,6 +5,33 @@
 // Apex Electrical's profile is written out in ./review.js (the first review built) and isn't repeated here.
 
 export const profiles = {
+  // Apex's review (./review.js) has its own Submission tab; this copy of the same answers fills its portal.
+  apex: {
+    legal: 'Apex Electrical, Inc.', entity: 'California corporation, 2009', principals: 'Maria Chen (President), Raj Iyer (VP Operations)',
+    license: 'C-10 #998877, CA', dirReg: '1000045671', emr: ['0.88', '0.90', '0.82'], trir: '1.9 / 0.8', fatalities: '0',
+    gl: '$2,000,000 / $4,000,000', umbrella: '$5,000,000', revenue: '$38,400,000', workingCapital: '$4,100,000',
+    bonding: 'Travelers, $3M single / $15M aggregate', backlog: '$14,200,000', largest: '$4,600,000', projects: '7',
+    specialty: ['Healthcare (HCAI / OSHPD)', '3 projects'], refs: ['Harborview Construction Group', 'Summit Pacific Builders'],
+    broker: 'Lockton (Sacramento)', surety: 'Travelers', osha: '1 other-than-serious citation (2023), abated', credit: 'PAYDEX 78, no liens',
+  },
+  // In progress (portal only, 25%): identity sections answered so far.
+  redwood: {
+    legal: 'Redwood Glazing, Inc.', entity: 'California corporation, 2013', principals: 'Jo Marsh (President), Evan Marsh (Operations)',
+    license: 'C-17 #1050772, CA', dirReg: '1000052290', emr: ['0.92', '0.90', '0.89'], trir: '2.4 / 1.0', fatalities: '0',
+    gl: '$2,000,000 / $4,000,000', umbrella: '$5,000,000', revenue: '$17,800,000', workingCapital: '$2,300,000',
+    bonding: 'Zurich, $2.5M single / $6M aggregate', backlog: '$5,900,000', largest: '$2,100,000', projects: '6',
+    specialty: ['Unitized curtain wall', '4 projects'], refs: ['Turner Pacific', 'Bayline Builders'],
+    broker: 'Lockton (San Francisco)', surety: 'Zurich', osha: 'No inspections in 3 years', credit: 'PAYDEX 80, no liens',
+  },
+  // In progress (portal only, 80%).
+  keystone: {
+    legal: 'Keystone Masonry, Inc.', entity: 'Arizona corporation, 2005 (CA foreign registration 2016)', principals: 'Luis Ortega (President), Teresa Ortega (Secretary)',
+    license: 'C-29 #1001983, CA · CR-13 #284511, AZ', dirReg: '1000061177', emr: ['0.91', '0.88', '0.86'], trir: '2.6 / 1.1', fatalities: '0',
+    gl: '$1,000,000 / $2,000,000', umbrella: '$5,000,000', revenue: '$21,600,000', workingCapital: '$2,900,000',
+    bonding: 'Travelers, $2.5M single / $6M aggregate', backlog: '$5,200,000', largest: '$2,400,000', projects: '8',
+    specialty: ['Public works masonry (DSA)', '6 projects'], refs: ['Capitol West Construction', 'Harborview Construction Group'],
+    broker: 'Marsh (Phoenix)', surety: 'Travelers', osha: 'No inspections in 3 years', credit: 'PAYDEX 78, no liens',
+  },
   summit: {
     legal: 'Summit Mechanical LLC', entity: 'California LLC, 2004', principals: 'Dev Patel (Managing Member), Karen Liu (CFO)',
     license: 'C-20 #845120, CA', dirReg: '1000012288', emr: ['1.08', '1.01', '0.97'], trir: '2.1 / 0.9', fatalities: '0',
