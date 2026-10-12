@@ -168,3 +168,23 @@ Asked for on 2026-10-11 after number fields in the portal showed their values fa
 - A scroll box that contains a visually hidden (`sr-only`) label must be `relative`, or the label escapes it and widens the page (F-064).
 - Check: at 1440 / 1024 / 390, every value sits under or next to its own label; no table input wider than its value needs; no horizontal page overflow.
 
+## 8. Filtering lists (D-30)
+
+Agreed on 2026-10-12 after the qualified-subcontractor selects proved awkward.
+
+| Where | Rule |
+|---|---|
+| **Filters on a table** | In the grid's **Filter panel** (toolbar Filter button; the button shows the number of active conditions). No selects or chips above the table for the same thing. Columns that should filter by value get `customProps: { treatAsSelectFilter: true, options }` (or type SelectInput / MultiSelect); a value that isn't a column (a list of trades, a count) is a hidden filter-only column (`invisible: true`) |
+| **Quick filters** | The 3–6 filters people use most, as one-click chips at the top of the panel (`quick-filters`). Each adds an ordinary condition the user can edit or remove |
+| **Several values** | "is any of" (one condition), not several OR groups |
+| **Filtered state** | The Filter button's count badge; clearing happens in the panel (Clear all, or remove a row). No count line or "Clear filters" link above the table (revised 2026-10-12) |
+| **Segmented views** (e.g. Review queue) | Stay above the grid when they are the screen's main navigation, and are **cross-linked** with the panel: a view other than All is one condition (Filter shows 1), the views are also quick filters, the panel moves the segment, a second view replaces the first, a filter that isn't one view selects no segment |
+| **Multi-select fields** (forms, filter values) | SelectV2 `multiple`: one line, up to 2 tags then "+N" (`maxVisibleTags: 0` → "3 selected" text in narrow fields), one clear ×, no typing (P-041) |
+
+- The panel is 800px with the value column twice the others, so date ranges and multi-values fit (P-044).
+- Check: open the panel, use each quick filter, pick several values, a date range, clear; the badge and (where there is one) the segment agree at every step, in both themes.
+
+## 9. AI-generated content
+
+AI output (e.g. the review's "Lintel AI" summary) is tagged with the AI StatusChip, and the tag carries the library **Tooltip** (hover and keyboard focus: wrap the chip in a focusable span) with this text: "This content was generated using AI and may contain errors or omissions. Verify important information before relying on it." Keep the line under the content that says what the record is (the evidence, not the summary).
+

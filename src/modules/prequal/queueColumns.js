@@ -33,8 +33,16 @@ export function queueRows(moment) {
       findingsText: r.findings ? `${r.findings} open${r.knockouts ? ` · ${r.knockouts} knockout` : ''}` : 'None',
       checksText: `${r.checks[0]} / ${r.checks[1]}`,
       assignedName: r.reviewerName || 'Unassigned',
+      // Every queue view the row belongs to (2026-10-12): the hidden "Queue view" column the segmented control and
+      // the Filter panel share.
+      queueViews: QUEUE_FILTERS.filter((f) => f.id !== 'all' && f.test(r)).map((f) => f.id),
     }));
 }
+
+/** The queue views as filter options and quick filters (the segmented control's views, minus All). */
+export const QUEUE_VIEW_FIELD = 'queueViews';
+export const queueViewOptions = QUEUE_FILTERS.filter((f) => f.id !== 'all').map((f) => ({ label: f.label, value: f.id }));
+export const queueQuickFilters = queueViewOptions.map((o) => ({ label: o.label, field: QUEUE_VIEW_FIELD, operator: 'is', value: o.value }));
 
 /** @param {(row) => void} onOpen  row action handler (Review now / Open → the review screen) */
 export function queueColumns(onOpen) {
@@ -87,5 +95,7 @@ export function queueColumns(onOpen) {
     { field: 'assignedName', label: 'ASSIGNED REVIEWER', type: 'ShortText', width: 170, readonly: true },
     { field: 'activityText', label: 'LAST ACTIVITY', type: 'ShortText', width: 180, flex: 1, readonly: true },
     actionColumn(actionLabel, onOpen),
+    // Filter-only, hidden: a row matches a view when it's in the row's list.
+    { field: QUEUE_VIEW_FIELD, label: 'Queue view', type: 'MultiSelect', invisible: true, readonly: true, customProps: { options: queueViewOptions } },
   ];
 }

@@ -15,14 +15,20 @@
     <template #content>
       <div class="flex h-full min-h-0 flex-col gap-space-16">
         <div class="flex flex-wrap items-center gap-x-space-16 gap-y-space-8" aria-label="Filters">
-          <SegmentedControl v-model="filter" :options="filterOptions" aria-label="Queue filter" size="md" />
+          <!-- Cross-linked with the grid's Filter panel (2026-10-12): a view other than All is a "Queue view is …"
+               condition (Filter shows 1); the same views are quick filters in the panel, and editing or removing
+               that condition there moves the segment. A panel filter that isn't one view leaves no segment selected. -->
+          <SegmentedControl :value="filter" :options="filterOptions" aria-label="Queue filter" size="md" @input="pickView" />
           <Checkbox :value="mine" label="Assigned to me" size="small" @input="mine = $event" />
           <LoadStatus :load="load" @retry="fetch">{{ summary }}</LoadStatus>
         </div>
 
         <LoadRegion v-slot="{ skeleton }" class="min-h-0 w-full min-w-0 flex-1" :load="load" content-loads @retry="fetch">
           <DataGrid
+            ref="grid"
             class="min-h-0 w-full min-w-0 flex-1"
+            :quick-filters="quickFilters"
+            @filter-change="onFilterChange"
             :data="rows"
             :loading="skeleton"
             :header="columns"
@@ -54,7 +60,20 @@ import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
 import { createLoad } from '~/candidates/LoadRegion/createLoad';
 import { mockRequest } from '~/modules/mock/request';
 import PrequalShell from '~/modules/prequal/PrequalShell.vue';
-import { queueRows, queueColumns, QUEUE_FILTERS, ME } from '~/modules/prequal/queueColumns';
+import { queueRows, queueColumns, QUEUE_FILTERS, ME, QUEUE_VIEW_FIELD, queueQuickFilters } from '~/modules/prequal/queueColumns';
+
+/** The single view a filter config expresses ('all' when it has no queue-view condition), or null when it's more. */
+function viewOf(config) {
+  if ((config.groups || []).length) return null;
+  const conds = config.conditions || [];
+  const views = conds.filter((c) => c.field === QUEUE_VIEW_FIELD);
+  if (!views.length) return conds.length ? null : 'all';
+  if (views.length > 1 || conds.length > 1) return null;
+  const { operator, value } = views[0];
+  if (operator === 'is') return value;
+  if (operator === 'isAnyOf' && Array.isArray(value) && value.length === 1) return value[0];
+  return null;
+}
 import { go } from '~/modules/prequal/router';
 
 export default {
@@ -69,6 +88,9 @@ export default {
       filter: 'all',
       filterOptions: QUEUE_FILTERS.map((f) => ({ label: f.label, value: f.id })),
       mine: false,
+      quickFilters: queueQuickFilters,
+      filtered: false,
+      shown: 0,
       rows: [],
       total: 0,
       load: createLoad({ label: 'review queue' }),
@@ -78,7 +100,7 @@ export default {
     summary() {
       // Nothing until the first answer: a "0 requests" before loading would be a false result.
       if (!this.load.hasData) return '';
-      const n = this.rows.length;
+      const n = this.filtered ? this.shown : this.rows.length;
       return n === this.total ? `${n} requests` : `${n} of ${this.total} requests`;
     },
     columns() {
@@ -86,8 +108,7 @@ export default {
     },
   },
   watch: {
-    // Filters are queried, as they would be on the server: the controls answer at once, the rows follow.
-    filter: 'fetch',
+    // "Assigned to me" is queried, as it would be on the server; the views filter in the grid (shared with its panel).
     mine: 'fetch',
   },
   created() {
@@ -98,19 +119,50 @@ export default {
   },
   methods: {
     fetch() {
-      const { filter, mine } = this;
+      const { mine } = this;
       this.load.run(
         (signal) =>
           mockRequest(() => {
             const all = queueRows(this.$moment);
-            const f = QUEUE_FILTERS.find((x) => x.id === filter);
-            return { rows: all.filter((r) => f.test(r) && (!mine || r.reviewer === ME)), total: all.length };
+            return { rows: all.filter((r) => !mine || r.reviewer === ME), total: all.length };
           }, { signal }),
         ({ rows, total }) => {
           this.rows = rows;
           this.total = total;
+          this.$nextTick(this.syncCount);
         },
       );
+    },
+    /** Segment → grid: replace any queue-view condition with this view's (none for All), keep the rest. */
+    pickView(id) {
+      this.filter = id;
+      const grid = this.$refs.grid;
+      if (!grid) return;
+      const config = grid.getFilterService().getFilterConfig();
+      if (viewOf(config) === id) return;
+      const others = (config.conditions || []).filter((c) => c.field !== QUEUE_VIEW_FIELD);
+      const next = id === 'all' ? others : [...others, { field: QUEUE_VIEW_FIELD, operator: 'is', value: id, join: 'and' }];
+      grid.setFilters((config.groups || []).length ? { conditions: [], groups: config.groups } : next);
+    },
+    /** Grid → segment: the panel (quick filter, edit, Clear all) moves the segment; a mixed filter selects none. */
+    onFilterChange({ filterConfig }) {
+      // Views are one choice, as in the segmented control: a second view quick filter replaces the first instead
+      // of AND-ing two views (which would usually match nothing).
+      const conds = filterConfig.conditions || [];
+      const viewConds = conds.filter((c) => c.field === QUEUE_VIEW_FIELD && c.operator === 'is');
+      if (viewConds.length > 1 && !(filterConfig.groups || []).length) {
+        const keep = viewConds[viewConds.length - 1];
+        this.$refs.grid.setFilters(conds.filter((c) => c.field !== QUEUE_VIEW_FIELD || c === keep));
+        return;
+      }
+      this.filter = viewOf(filterConfig);
+      const groups = filterConfig.groups || [];
+      this.filtered = (filterConfig.conditions || []).length + groups.length > 0;
+      this.$nextTick(this.syncCount);
+    },
+    syncCount() {
+      const grid = this.$refs.grid;
+      this.shown = grid ? grid.getDisplayRowCount() : this.rows.length;
     },
     openRow({ row }) {
       if (row) go('review', row.id);

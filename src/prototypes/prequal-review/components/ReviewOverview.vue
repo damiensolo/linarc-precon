@@ -5,7 +5,12 @@
     <section class="flex flex-col gap-space-8" aria-labelledby="lintel-h">
       <div class="flex items-center gap-space-8">
         <h2 id="lintel-h" class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Summary</h2>
-        <StatusChip label="Lintel AI" status="ai" fill-style="outline" type="default" :removable="false" />
+        <!-- The AI tag explains itself on hover and keyboard focus (library Tooltip, 2026-10-12). -->
+        <Tooltip :label="AI_NOTE" placement="top">
+          <span class="inline-flex rounded-radius-round focus-visible:outline focus-visible:outline-2 focus-visible:outline-border-primary-focused" tabindex="0" :aria-label="`Lintel AI. ${AI_NOTE}`">
+            <StatusChip label="Lintel AI" status="ai" fill-style="outline" type="default" :removable="false" />
+          </span>
+        </Tooltip>
       </div>
       <p class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-default">{{ summary }}</p>
       <p class="m-0 font-label text-fontsize-12 leading-lineheight-16 text-text-subtle">Generated from the submission and check results. The evidence below is the record; this summary is not.</p>
@@ -39,11 +44,18 @@
 import Button from '@/components/Button/Button.vue';
 import StatusChip from '@/components/StatusChip/StatusChip.vue';
 import ProgressBar from '@/components/ProgressBar/ProgressBar.vue';
+import Tooltip from '@/componentsV2/Tooltip/index.vue';
 import FindingList from './FindingList.vue';
+
+const AI_NOTE =
+  'This content was generated using AI and may contain errors or omissions. Verify important information before relying on it.';
 
 export default {
   name: 'ReviewOverview',
-  components: { Button, StatusChip, ProgressBar, FindingList },
+  components: { Button, StatusChip, ProgressBar, FindingList, Tooltip },
+  data() {
+    return { AI_NOTE };
+  },
   props: {
     summary: { type: String, required: true },
     findings: { type: Array, required: true },

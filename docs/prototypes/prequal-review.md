@@ -93,3 +93,7 @@ At the user's request, the mock data now covers every request and every state, s
 
 ## Update 2026-10-11: the review is part of the end-to-end flow (D-29)
 Opening a Ready for review request starts it (GC is reviewing, A11). Confirm, Send request and Reject request record the decision in the demo session (`data/session.js`): approvals create the qualification record (`records.js` `sessionRecord`: the approved trades and limits, the chosen conditions as Open, the documents as reviewed, the audit trail from the session's history) and the request appears on Qualified Subs; Request information opens the requested items in the portal, and the sub's response turns the panel's block into **Response received** with what came back; Reject shows Not approved in the panel, the portal and (when the company has no approval) Qualified Subs. Override / Dismiss persist. A request submitted in the demo gets a review generated from its submission (`data/submissionReview.js`).
+
+## Update 2026-10-12: Lintel AI tag tooltip (P-043, §9)
+The "Lintel AI" tag on the Overview summary shows the library Tooltip on hover and keyboard focus: "This content was generated using AI and may contain errors or omissions. Verify important information before relying on it." The library tooltip now wraps at 250px (it was one line). Verified: 250×102 tooltip on hover and on focus, both themes, no console errors. Map: crop frame 03c in Level 2a.
+
