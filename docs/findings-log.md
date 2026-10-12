@@ -568,3 +568,10 @@ What changed: `src/main.js` installs Vuex with Storybook's mock `DatePicker` mod
 Verification gap: screenshots don't open popovers. Interactive components (date pickers, selects, menus) need an open-and-pick check in a script.
 Case study: Y. A component can be correct and still fail because the host app's contract (a store) is missing.
 
+## F-067 · 2026-10-11 · The app map kept the old title bar after the library gained the Comfortable size
+Tags: figma, process
+What happened: the user found the back button on the Documentation app map (screen 33, Northstar) still drawn as the 48px Title Bar / Workflow with the white Tool-type icon, not the app's 64px bar with the grey Back button. All 10 Title Bar / Workflow instances on the Prequalifications page (screens 03, 04, 19, 22, 23, 24, 25, 33 and two thumbnails) were `Size=Default`: they were drawn before P-038 added `Size=Comfortable`, and new screens are made by cloning old ones (prd-to-prototype step 6), so the old variant kept propagating. A second, library-side fault showed after swapping: the 9 Comfortable variants built for P-038 had lost their property bindings when cloned (title text not bound to `Title`, AI-tag frame not bound to `Show AI Tag`), so every Comfortable instance read "Create RFI".
+Why it mattered: design review happens on the app map (D-22), so the map showed a back button the app no longer has.
+What changed: library (Title Bar / Workflow 40017329:40863): `Title` and `Show AI Tag` rebound on all 9 Comfortable variants (needs a library publish). App map: the 10 instances swapped to `Size=Comfortable` of the same Status, titles kept, content below the bar moved down 16px (4px on the 0.25 thumbnails), frames grown to match, hotspots and arrow ends moved with them (back-button hotspots 8px, centred on the new button). The skill's step 6 now says detail and create screens use the Comfortable bar and how to swap a cloned one.
+Case study: Y. Cloning reference screens copies their outdated library variants; a variant change in the library needs a sweep of the map.
+
