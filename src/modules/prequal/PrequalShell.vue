@@ -20,7 +20,16 @@
       :user-details="{ name: 'Alex Morgan', email: 'alex@example.com' }"
       @tool-click="onTool"
       @account-click="onAccountClick"
-    />
+    >
+      <!-- Create menu: Quick Create Menu (StaticMegaMenu, in flow inside the Create cell's dropdown). Placeholder items. -->
+      <template #create-dropdown>
+        <StaticMegaMenu :columns="quickCreate" aria-label="Quick create" @item-click="() => {}">
+          <template #item-icon="{ item, iconColor }">
+            <component :is="item.icon" :size="20" :stroke-width="1.75" :color="iconColor" />
+          </template>
+        </StaticMegaMenu>
+      </template>
+    </TopNavBar>
 
     <div class="flex flex-1 min-h-0">
       <SideNavV2
@@ -74,15 +83,16 @@
 // PROTOTYPE-CHANGE P-014: library-local until it moves into @development/linarc-icons.
 import PreconstructionModuleIcon from '@/components/TopNavBar/ModuleIcon/PreconstructionModuleIcon.js';
 import TopNavBar from '@/components/TopNavBar/index.vue';
+import StaticMegaMenu from '@/components/MegaMenu/StaticMegaMenu/index.vue';
 import SideNavV2 from '@/componentsV2/SideNavV2/SideNavV2.vue';
 import AppLayout from '@/componentsV2/AppLayout/AppLayout.vue';
-import { preconTools, preconRails, projects, places } from './nav';
+import { preconTools, preconRails, projects, places, quickCreate } from './nav';
 import { go, isBuilt } from './router';
 import { accountWithSettings, overflowWithSettings, onAccountClick } from '~/modules/sandbox';
 
 export default {
   name: 'PrequalShell',
-  components: { TopNavBar, SideNavV2, AppLayout },
+  components: { TopNavBar, StaticMegaMenu, SideNavV2, AppLayout },
   props: {
     /** Screen name from router.js (dashboard, queue, qualified, review, record …); selects the rail item. */
     screen: { type: String, required: true },
@@ -99,7 +109,7 @@ export default {
   data() {
     // The tool whose rail lists this screen (Configure for the template screens, 2026-10-12); Prequalification otherwise.
     const owner = Object.keys(preconRails).find((tool) => preconRails[tool].some((i) => i.screen === this.screen));
-    return { PreconstructionModuleIcon, projects, places, selectedTool: owner || 'prequalification' };
+    return { PreconstructionModuleIcon, projects, places, quickCreate, selectedTool: owner || 'prequalification' };
   },
   computed: {
     account() {

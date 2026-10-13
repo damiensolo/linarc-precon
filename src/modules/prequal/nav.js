@@ -5,13 +5,19 @@
 // Preconstruction
 // ├── Bidding           → Bid Projects, Bid Packages, Bid Comparison & Awards
 // ├── Prequalification  → Overview, Review Queue, Qualified Subs (D-23: Requests removed, it duplicated the Overview)
-// ├── Directory         → Companies (a subcontractor profile and its Qualification summary are pages inside it)
+// ├── Directory         → Companies (hidden from the tool menu for now, 2026-10-13; rail kept below)
 // └── Configure         → Templates, Qualification Policies, Permissions (prequalification settings)
 import {
   BadgeCheck,
   Bolt,
   BookUser,
   Building2,
+  CalendarRange,
+  CheckSquare,
+  ClipboardList,
+  FileCheck,
+  FileDiff,
+  FileQuestion,
   FolderKanban,
   Gavel,
   LayoutDashboard,
@@ -22,12 +28,16 @@ import {
   Scale,
   ScrollText,
   ShieldCheck,
+  Ticket,
+  Truck,
+  Users,
 } from '@development/linarc-icons';
 
 export const preconTools = [
   { id: 'bidding', label: 'Bidding', icon: Gavel },
   { id: 'prequalification', label: 'Prequalification', icon: ShieldCheck },
-  { id: 'directory', label: 'Directory', icon: BookUser },
+  // Hidden for now (asked 2026-10-13): no Directory screens are built yet.
+  // { id: 'directory', label: 'Directory', icon: BookUser },
   { id: 'configure', label: 'Configure', icon: Bolt },
 ];
 
@@ -37,13 +47,15 @@ const rail = (tool, items) =>
     return { id, label, icon, href: `/preconstruction/${tool}/${id}`, ...extra };
   });
 
-// One side-nav rail per tool. "Qualified Subs" is the rail label for "Qualified subcontractors" (fits the 82px rail).
+// One side-nav rail per tool. "Qualified Subs" is the rail label for "Qualified subcontractors" and "Comparison & Awards"
+// for "Bid Comparison & Awards" (two lines in the 82px rail).
 // `screen` names the prototype screen a rail item opens (src/modules/prequal/router.js); items without one stay put.
 export const preconRails = {
   bidding: rail('bidding', [
     ['Bid Projects', FolderKanban],
     ['Bid Packages', Package],
-    ['Bid Comparison & Awards', Scale],
+    // The rail fits two lines of 72px; "Bid Comparison" alone is wider, so the rail shows the short form.
+    ['Comparison & Awards', Scale, { id: 'bid-comparison-awards', ariaLabel: 'Bid Comparison & Awards', tooltip: 'Bid Comparison & Awards' }],
   ]),
   prequalification: rail('prequalification', [
     ['Overview', LayoutDashboard, { screen: 'dashboard' }],
@@ -57,6 +69,30 @@ export const preconRails = {
     ['Permissions', LockKeyhole],
   ]),
 };
+
+// PLACEHOLDER DATA — the top nav's Create menu (Figma Quick Create Menu = StaticMegaMenu, one "Quick Create" group).
+// Same items as the other prototypes' menu, plus Meetings. Outline icon in the neutral icon/default (the menu's default; asked 2026-10-13), no icon tile. None of these screens are built; picking one does nothing.
+export const quickCreate = [
+  {
+    id: 'quick-create',
+    groups: [{
+      id: 'create',
+      sectionTitle: 'Quick Create',
+      items: [
+        ['change-order', 'Change Order', FileDiff],
+        ['checklist', 'Checklist', CheckSquare],
+        ['equipment', 'Equipment', Truck],
+        ['lookahead', 'Lookahead', CalendarRange],
+        ['materials', 'Materials', Package],
+        ['meetings', 'Meetings', Users],
+        ['tm-ticket', 'T&M Ticket', Ticket],
+        ['punch-list', 'Punch List', ClipboardList],
+        ['rfi', 'RFI', FileQuestion],
+        ['submittal', 'Submittal', FileCheck],
+      ].map(([id, name, icon]) => ({ id, name, icon, url: `/create/${id}`, iconBgColor: 'transparent' })),
+    }],
+  },
+];
 
 // PLACEHOLDER DATA — project context shown in the top nav.
 export const projects = [
