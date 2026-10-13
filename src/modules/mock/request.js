@@ -12,7 +12,9 @@ export const LATENCY = Object.freeze({
   'fail-once': 1200,
 });
 
-export const LATENCY_OPTIONS = Object.keys(LATENCY).map((value) => ({ value, label: value === 'instant' ? 'Instant' : `${value[0].toUpperCase()}${value.slice(1)} (${LATENCY[value]} ms)` }));
+// Short labels so the sandbox select stays narrow; the delays are above.
+const LATENCY_LABELS = { instant: 'Instant', fast: 'Fast', medium: 'Medium', slow: 'Slow', fail: 'Fail', 'fail-once': 'Fail once' };
+export const LATENCY_OPTIONS = Object.keys(LATENCY).map((value) => ({ value, label: LATENCY_LABELS[value] }));
 
 export function latencyScenario() {
   const v = new URLSearchParams(window.location.search).get('latency');

@@ -6,17 +6,20 @@
       v-if="showChrome"
       class="flex flex-wrap items-center justify-between gap-space-8 px-space-16 sm:px-space-24 py-space-12 border-b border-border-default bg-surface-container"
     >
-      <div class="flex flex-1 flex-wrap items-center gap-space-12 min-w-0">
+      <div class="flex flex-1 basis-full sm:basis-0 flex-wrap items-center gap-space-12 min-w-0">
         <span class="font-heading text-fontsize-14 leading-lineheight-20 font-bold text-text-default">
-          Linarc Prototypes
+          Prototypes
         </span>
+        <!-- As wide as its longest name (measured in mounted(); capped at the bar's width on a phone). -->
         <SelectV2
+          ref="picker"
           v-model="currentSlug"
-          class="w-full sm:w-1/2 lg:w-1/3"
+          class="max-w-full shrink-0"
+          :style="pickerWidth ? { width: `${pickerWidth}px` } : null"
           size="small"
           placeholder="Choose a prototype"
           :options="prototypeOptions"
-          :visible-item-count="8"
+          :visible-item-count="10"
         />
         <!-- Record picker: screens that take a record id in the hash (prototype.records). Sandbox only, like the picker. -->
         <SelectV2
@@ -26,7 +29,7 @@
           size="small"
           placeholder="Choose a record"
           :options="recordOptions"
-          :visible-item-count="8"
+          :visible-item-count="10"
         />
         <a
           v-if="current && current.figma"
@@ -40,22 +43,24 @@
       </div>
 
       <div class="flex items-center gap-space-8">
-        <!-- Simulated request latency for reviewing loading states (src/modules/mock/request.js). Remounts the screen. -->
-        <SelectV2
-          v-model="latency"
-          class="w-space-124 sm:w-auto"
-          size="small"
-          placeholder="Simulated latency"
-          :options="latencyOptions"
-        />
         <!-- The demo session (src/modules/prequal/data/session.js): back to the starting data. Sandbox only. -->
         <Button
           v-if="demoChanged"
           label="Reset demo data"
           color-scheme="secondary"
-          variant="minimal"
+          variant="outline"
           size="small"
           @onClick="resetDemo"
+        />
+        <!-- Simulated request latency for reviewing loading states (src/modules/mock/request.js). Remounts the screen. -->
+        <SelectV2
+          v-model="latency"
+          class="w-space-124"
+          title="Simulated loading speed: how long screens take to load their data"
+          size="small"
+          placeholder="Simulated latency"
+          :options="latencyOptions"
+          :allow-search="false"
         />
         <Button
           :label="isDark ? 'Dark' : 'Light'"
@@ -84,6 +89,7 @@ import { hasChanges, resetSession } from '~/modules/prequal/data/session';
 import { sandbox } from '~/modules/sandbox';
 
 const THEME_KEY = 'linarc-prototypes:theme';
+const HIDDEN_SLUGS = ['prequal-wizard-modal'];
 
 function readQuerySlug() {
   return new URLSearchParams(window.location.search).get('p');
@@ -104,6 +110,7 @@ export default {
       isDark: false,
       routeHash: window.location.hash,
       latency: latencyScenario(),
+      pickerWidth: 0,
       latencyOptions: LATENCY_OPTIONS,
     };
   },
@@ -112,7 +119,11 @@ export default {
       return sandbox.controls;
     },
     prototypeOptions() {
-      return this.prototypes.map((p) => ({ label: p.title, value: p.slug }));
+      // Short names: the module prefix ("Preconstruction › ") is dropped; variants kept for comparison stay reachable by
+      // URL (?p=<slug>) but aren't listed.
+      return this.prototypes
+        .filter((p) => !HIDDEN_SLUGS.includes(p.slug))
+        .map((p) => ({ label: p.title.replace(/^Preconstruction › /, ''), value: p.slug }));
     },
     current() {
       return this.prototypes.find((p) => p.slug === this.currentSlug);
@@ -156,6 +167,9 @@ export default {
       window.history.replaceState(null, '', url);
     },
   },
+  mounted() {
+    this.sizePicker();
+  },
   created() {
     // ?theme=dark|light wins (shareable links, headless screenshots); else last choice.
     const queryTheme = new URLSearchParams(window.location.search).get('theme');
@@ -175,6 +189,22 @@ export default {
     window.removeEventListener('popstate', this.syncFromUrl);
   },
   methods: {
+    /** Picker width = the longest option label in the trigger's own font + the trigger's padding and chevron. */
+    sizePicker() {
+      // After the web font loads, or the fallback font's widths would be measured.
+      const ready = document.fonts ? document.fonts.ready : Promise.resolve();
+      ready.then(() => {
+        const root = this.$refs.picker && this.$refs.picker.$el;
+        const input = root && root.querySelector('input');
+        if (!input) return;
+        const css = getComputedStyle(input);
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.font = `${css.fontWeight} ${css.fontSize} ${css.fontFamily}`;
+        const text = Math.max(...this.prototypeOptions.map((o) => ctx.measureText(o.label).width));
+        const chrome = root.offsetWidth - input.clientWidth + parseFloat(css.paddingLeft) + parseFloat(css.paddingRight);
+        this.pickerWidth = Math.ceil(text + chrome + 4);
+      });
+    },
     syncFromUrl() {
       const slug = readQuerySlug();
       if (this.prototypes.some((p) => p.slug === slug)) this.currentSlug = slug;
