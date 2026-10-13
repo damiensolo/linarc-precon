@@ -20,6 +20,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "shot": "node scripts/screenshot.mjs"
+    "shot": "node scripts/screenshot.mjs",
+    "deploy:preview": "vite build && vercel deploy",
+    "deploy": "vite build && vercel deploy --prod"
   }
 }
