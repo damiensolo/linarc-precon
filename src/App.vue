@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col h-screen bg-surface-page">
-    <!-- Sandbox chrome: prototype picker + theme toggle. Not part of any prototype. Hidden with ?chrome=0. -->
+    <!-- Sandbox chrome: prototype picker + theme toggle. Not part of any prototype. Shown and hidden with the settings
+         gear in each screen's top nav (~/modules/sandbox.js); ?chrome=0 starts hidden. -->
     <header
       v-if="showChrome"
       class="flex flex-wrap items-center justify-between gap-space-8 px-space-16 sm:px-space-24 py-space-12 border-b border-border-default bg-surface-container"
@@ -80,6 +81,7 @@ import prototypes from '~/prototypes';
 import { NAVIGATE_EVENT } from '~/modules/prequal/router';
 import { LATENCY_OPTIONS, latencyScenario } from '~/modules/mock/request';
 import { hasChanges, resetSession } from '~/modules/prequal/data/session';
+import { sandbox } from '~/modules/sandbox';
 
 const THEME_KEY = 'linarc-prototypes:theme';
 
@@ -99,8 +101,6 @@ export default {
     return {
       prototypes,
       currentSlug: prototypes.some((p) => p.slug === slug) ? slug : fallback,
-      // ?chrome=0 renders the prototype full-window, for pixel comparison with Figma frames.
-      showChrome: new URLSearchParams(window.location.search).get('chrome') !== '0',
       isDark: false,
       routeHash: window.location.hash,
       latency: latencyScenario(),
@@ -108,6 +108,9 @@ export default {
     };
   },
   computed: {
+    showChrome() {
+      return sandbox.controls;
+    },
     prototypeOptions() {
       return this.prototypes.map((p) => ({ label: p.title, value: p.slug }));
     },

@@ -15,12 +15,11 @@
         primarySelectedValue: 'northern-heights',
         secondaryOptions: places,
       }"
-      :account="{
-        enabled: true,
-        show: { announcement: true, message: true, chatSupport: true, help: true, notifications: true, profile: true },
-      }"
+      :account="account"
+      :overflow="overflow"
       :user-details="{ name: 'Alex Morgan', email: 'alex@example.com' }"
       @tool-click="onTool"
+      @account-click="onAccountClick"
     />
 
     <div class="flex flex-1 min-h-0">
@@ -79,6 +78,7 @@ import SideNavV2 from '@/componentsV2/SideNavV2/SideNavV2.vue';
 import AppLayout from '@/componentsV2/AppLayout/AppLayout.vue';
 import { preconTools, preconRails, projects, places } from './nav';
 import { go, isBuilt } from './router';
+import { accountWithSettings, overflowWithSettings, onAccountClick } from '~/modules/sandbox';
 
 export default {
   name: 'PrequalShell',
@@ -102,6 +102,12 @@ export default {
     return { PreconstructionModuleIcon, projects, places, selectedTool: owner || 'prequalification' };
   },
   computed: {
+    account() {
+      return accountWithSettings({ announcement: true, message: true, chatSupport: true, help: true, notifications: true, profile: true });
+    },
+    overflow() {
+      return overflowWithSettings();
+    },
     tools() {
       return preconTools.map((t) => ({ ...t, isSelected: t.id === this.selectedTool }));
     },
@@ -117,6 +123,7 @@ export default {
     },
   },
   methods: {
+    onAccountClick,
     onTool({ id }) {
       if (preconRails[id]) this.selectedTool = id;
     },

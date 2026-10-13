@@ -9,6 +9,7 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 ## Commands
 
 - `yarn dev` → http://localhost:5173 (`?p=<slug>` picks a prototype, `?theme=dark|light` forces a theme)
+- **Prototype controls** (the sandbox bar: picker, records, latency, reset, theme): shown and hidden with the settings gear in each screen's top nav (or its hamburger drawer on a phone); remembered per browser, `?chrome=0` starts hidden. State in `src/modules/sandbox.js`; the gear is P-045.
 - `yarn build` → production build (catches import/compile errors)
 - Sandbox **record picker**: screens that declare `prototype.records` (review, record, portal) get a second select in the sandbox bar to open any request (D-27).
 - `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core (if Edge fails to launch, set `EDGE_PATH` to Chrome, F-041); the dev server must be running. Write output to the scratchpad, not the repo.

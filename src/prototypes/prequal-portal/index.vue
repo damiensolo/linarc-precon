@@ -34,11 +34,10 @@
       :module="{ custom: true }"
       :tools="{ items: [], needBookmarks: false, needCreate: false, isAdmin: false }"
       :context="{ enabled: false }"
-      :account="{
-        enabled: true,
-        show: { announcement: false, message: false, chatSupport: false, help: true, notifications: true, profile: true },
-      }"
+      :account="account"
+      :overflow="overflow"
       :user-details="{ name: request.contact.name, email: request.contact.email }"
+      @account-click="onAccountClick"
     >
       <template #custom_module>
         <span class="flex h-space-72 w-space-84 items-center justify-center" aria-label="Linarc" role="img">
@@ -264,6 +263,7 @@ import { TODAY } from '~/modules/prequal/data';
 import { SECTION } from '~/modules/prequal/status';
 import { portalFieldTypes, sectionSchema, sectionValues } from '~/modules/prequal/portalFields';
 import { currentRoute, go } from '~/modules/prequal/router';
+import { accountWithSettings, overflowWithSettings, onAccountClick } from '~/modules/sandbox';
 
 /** The portal shown without a request in the hash: Northstar, the request the portal was first built for. */
 const DEFAULT_REQUEST = 'req-008';
@@ -332,6 +332,12 @@ export default {
     };
   },
   computed: {
+    account() {
+      return accountWithSettings({ announcement: false, message: false, chatSupport: false, help: true, notifications: true, profile: true });
+    },
+    overflow() {
+      return overflowWithSettings();
+    },
     byId() {
       return Object.fromEntries(this.sections.map((s) => [s.id, s]));
     },
@@ -437,6 +443,7 @@ export default {
     Object.values(this.inFlight).forEach((u) => this.stopUpload(u));
   },
   methods: {
+    onAccountClick,
     goTo(id) {
       if (!id || id === this.current) return;
       this.sectionError = false;
