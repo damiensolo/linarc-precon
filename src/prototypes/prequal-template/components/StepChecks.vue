@@ -7,7 +7,7 @@
     <p class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">
       Linarc runs these against outside sources. Free checks are included in the plan; paid checks are billed per request on the policy acknowledged at publish.
     </p>
-    <ul class="m-0 flex list-none flex-col divide-y divide-border-subtle p-0">
+    <ul class="m-0 flex list-none flex-col divide-y divide-border-subtle p-0" data-target="checks">
       <li v-for="k in CHECKS" :key="k.id" class="flex flex-col gap-space-8 py-space-12">
         <div class="flex items-start gap-space-12">
           <Checkbox :value="selected(k.id)" :label="k.label" size="small" class="min-w-0 flex-1" @input="toggle(k.id, $event)" />
@@ -32,11 +32,13 @@ import Checkbox from '@/components/Checkbox/Checkbox.vue';
 import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
 import { CHECKS } from '~/modules/prequal/data/wizard';
 import { CHECK_RUNS, CHECK_VISIBILITY } from '~/modules/prequal/data/templateCatalog';
+import targetFocus from './targetFocus';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
 export default {
   name: 'StepChecks',
+  mixins: [targetFocus],
   components: { Checkbox, SelectV2 },
   props: { def: { type: Object, required: true } },
   data() {

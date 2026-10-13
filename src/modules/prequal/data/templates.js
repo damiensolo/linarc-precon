@@ -205,28 +205,37 @@ export function summaryOf(def) {
   };
 }
 
-/** What stops a template from being published, or should be looked at first (PRD UX l. 999–1003). `blocking` or not. */
+/**
+ * What stops a template from being published, or should be looked at first (PRD UX l. 999–1003). Each warning says
+ * where it is (`target`: the step and the element the builder scrolls to and marks, see components/targetFocus.js),
+ * how to fix it (`fix`) and what the action reads (`go`). `blocking` or not.
+ */
 export function warningsFor(def) {
   const out = [];
   const s = summaryOf(def);
-  if (!def.name || !def.name.trim()) out.push({ id: 'name', step: 'basics', blocking: true, text: 'The template has no name.' });
-  if (!def.trades.length) out.push({ id: 'trades', step: 'basics', blocking: true, text: 'No trade group is selected, so no request can match this template.' });
-  if (!def.sizeBands.length) out.push({ id: 'size', step: 'basics', blocking: false, text: 'No project size is selected; the template will match any size.' });
-  if (s.weightTotal !== 100) out.push({ id: 'weights', step: 'scoring', blocking: true, text: `Scoring weights add up to ${s.weightTotal}%, not 100%.` });
-  if (def.bands.review >= def.bands.accept) out.push({ id: 'bands', step: 'scoring', blocking: true, text: 'The Review band must start below the Accept band.' });
+  const W = (id, step, key, blocking, text, fix, go) => out.push({ id, step, blocking, text, fix, go, target: { step, key } });
+  if (!def.name || !def.name.trim()) W('name', 'basics', 'field:name', true, 'The template has no name.', 'Type a name on Basics.', 'Go to Basics › Template name');
+  if (!def.trades.length) W('trades', 'basics', 'field:trades', true, 'No trade group is selected, so no request can match this template.', 'Pick the trades it applies to on Basics.', 'Go to Basics › Trade groups');
+  if (!def.sizeBands.length) W('size', 'basics', 'field:sizeBands', false, 'No project size is selected; the template will match any size.', 'Pick one or more sizes on Basics, or leave it to match any.', 'Go to Basics › Project size');
+  if (s.weightTotal !== 100) W('weights', 'scoring', 'weights', true, `Scoring weights add up to ${s.weightTotal}%, not 100%.`, `${s.weightTotal > 100 ? 'Remove' : 'Add'} ${Math.abs(100 - s.weightTotal)}% across the section weights.`, 'Go to Scoring & knockouts › Section weights');
+  if (def.bands.review >= def.bands.accept) W('bands', 'scoring', 'bands', true, 'The Review band must start below the Accept band.', 'Lower Review from, or raise Accept from.', 'Go to Scoring & knockouts › Recommendation bands');
   for (const sec of def.sections) {
     if (sec.mode === 'off') continue;
-    if (sec.custom && !(sec.label || '').trim()) out.push({ id: `title-${sec.id}`, step: 'requirements', blocking: true, text: 'A custom section has no title.' });
-    if (!sec.fields.some((x) => x.mode !== 'off')) out.push({ id: `empty-${sec.id}`, step: 'requirements', blocking: true, text: `${sec.label || 'A custom section'} is ${sec.mode} but has no fields.` });
-    for (const g of sec.groups || []) if (!(g.label || '').trim()) out.push({ id: `group-${sec.id}-${g.id}`, step: 'requirements', blocking: false, text: `A group in ${sec.label} has no title.` });
+    const name = sec.label || 'A custom section';
+    if (sec.custom && !(sec.label || '').trim()) W(`title-${sec.id}`, 'requirements', `section:${sec.id}`, true, 'A custom section has no title.', 'Type a title in the section heading.', 'Go to Requirements › the section');
+    if (!sec.fields.some((x) => x.mode !== 'off')) W(`empty-${sec.id}`, 'requirements', `section:${sec.id}`, true, `${name} is ${sec.mode} but has no fields.`, 'Add a custom field, or set the section to Not asked.', `Go to Requirements › ${name}`);
+    for (const g of sec.groups || []) if (!(g.label || '').trim()) W(`group-${sec.id}-${g.id}`, 'requirements', `section:${sec.id}`, false, `A group in ${name} has no title.`, 'Configure a field in the group and type the group title.', `Go to Requirements › ${name}`);
     for (const x of sec.fields) {
-      if (x.custom && x.mode !== 'off' && ['select', 'multiselect'].includes(x.type) && !(x.options && x.options.length)) out.push({ id: `opts-${sec.id}-${x.id}`, step: 'requirements', blocking: true, text: `“${x.label}” (${sec.label}) is a select with no options.` });
-      if (x.mode !== 'off' && x.evidence && !def.documents.some((d) => d.id === x.evidence && d.mode !== 'off')) out.push({ id: `ev-${sec.id}-${x.id}`, step: 'requirements', blocking: false, text: `“${x.label}” (${sec.label}) asks for a document that is not requested: ${(def.documents.find((d) => d.id === x.evidence) || { label: x.evidence }).label}.` });
+      if (x.custom && x.mode !== 'off' && ['select', 'multiselect'].includes(x.type) && !(x.options && x.options.length)) W(`opts-${sec.id}-${x.id}`, 'requirements', `row:${sec.id}:${x.id}`, true, `“${x.label}” (${name}) is a select with no options.`, 'Configure the field and add its options, one per line.', `Go to Requirements › ${name} › ${x.label}`);
+      if (x.mode !== 'off' && x.evidence && !def.documents.some((d) => d.id === x.evidence && d.mode !== 'off')) {
+        const doc = (def.documents.find((d) => d.id === x.evidence) || { label: x.evidence }).label;
+        W(`ev-${sec.id}-${x.id}`, 'requirements', `row:${sec.id}:${x.id}`, false, `“${x.label}” (${name}) asks for a document that is not requested: ${doc}.`, `Configure the field and pick another evidence document, or set ${doc} to Required or Optional under Documents.`, `Go to Requirements › ${name} › ${x.label}`);
+      }
     }
   }
-  if (!s.documentsRequired) out.push({ id: 'docs', step: 'requirements', blocking: false, text: 'No document is required.' });
-  if (!def.checks.length) out.push({ id: 'checks', step: 'checks', blocking: false, text: 'No independent check runs; every value will stay Declared.' });
-  if (s.paidChecks && !def.billingAcknowledged) out.push({ id: 'billing', step: 'publish', blocking: true, text: 'Paid checks are selected; acknowledge the billing policy below before publishing.' });
+  if (!s.documentsRequired) W('docs', 'requirements', 'documents', false, 'No document is required.', 'Set at least one document to Required under Documents.', 'Go to Requirements › Documents');
+  if (!def.checks.length) W('checks', 'checks', 'checks', false, 'No independent check runs; every value will stay Declared.', 'Tick at least the free checks.', 'Go to Checks');
+  if (s.paidChecks && !def.billingAcknowledged) W('billing', 'publish', 'billing', true, 'Paid checks are selected; acknowledge the billing policy before publishing.', 'Tick the acknowledgement under Billing below.', 'Acknowledge below');
   // What blocks publishing first.
   return out.sort((a, b) => Number(b.blocking) - Number(a.blocking));
 }

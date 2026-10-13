@@ -43,6 +43,8 @@ export default {
       savedAt: null,
       isNarrow: false,
       confirm: null, // 'publish' | 'archive' | 'discard' | null
+      /** The item a Review & publish warning sent the admin to: { key, n } (components/targetFocus.js). */
+      focus: null,
       draftLoad: createLoad({ label: 'draft', action: { busy: 'Saving', done: 'Saved', error: "Couldn't save the draft." } }),
       publishLoad: createLoad({ label: 'template', action: { busy: 'Publishing', done: 'Published', error: "Couldn't publish the template." } }),
       lastAction: null,
@@ -139,13 +141,17 @@ export default {
       this.def = definitionFromBaseline(baselineId, { name, trades, sizeBands });
       this.dirty = true;
     },
-    goTo(id) {
-      if (!id || id === this.current) return;
-      this.current = id;
-      const base = this.templateId || 'new';
-      window.history.replaceState(null, '', `${window.location.search}#${encodeURIComponent(`${base}/${id}`)}`);
-      const el = this.scrollElement();
-      if (el) el.scrollTop = 0;
+    /** Open a step; with a warning, land on its item (the step scrolls to and marks `focus.key`). */
+    goTo(id, warning) {
+      const key = warning && warning.target ? warning.target.key : null;
+      if (id && id !== this.current) {
+        this.current = id;
+        const base = this.templateId || 'new';
+        window.history.replaceState(null, '', `${window.location.search}#${encodeURIComponent(`${base}/${id}`)}`);
+        const el = this.scrollElement();
+        if (el && !key) el.scrollTop = 0;
+      }
+      this.focus = key ? { key, n: Date.now() } : null;
     },
     scrollElement() {
       return this.$el.querySelector('.lnrc-app-layout__content-body');

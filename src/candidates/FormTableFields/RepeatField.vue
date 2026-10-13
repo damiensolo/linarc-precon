@@ -37,9 +37,10 @@
           </tr>
         </thead>
         <tbody>
+          <template v-for="(row, i) in rows">
           <tr
-            v-for="(row, i) in rows"
             :key="rowKey(row, i)"
+            :data-target="p.rowTarget ? p.rowTarget(row) : null"
             :class="[{ 'bg-surface-container': editing === i || dragOver === i }, canDrag(row) && editing === null ? 'cursor-grab' : '']"
             :draggable="canDrag(row) && editing === null ? 'true' : null"
             @dragstart="onDragStart(i, $event)"
@@ -51,7 +52,16 @@
             <td v-if="hasReorder" class="border-b border-border-subtle px-space-4 py-space-10 align-top text-text-soft">
               <span v-if="canDrag(row)" class="inline-flex" :aria-label="`Drag to reorder ${rowLabel(row)}`" role="img"><GripVertical :size="16" :stroke-width="2" aria-hidden="true" /></span>
             </td>
-            <td v-for="c in tableColumns" :key="c.key" class="border-b border-border-subtle px-space-8 py-space-10 align-top" :class="[isNumeric(c) ? 'whitespace-nowrap text-right tabular-nums' : 'text-left', isMuted(row) ? 'text-text-soft' : 'text-text-default']">{{ cell(row, c) }}</td>
+            <td v-for="(c, ci) in tableColumns" :key="c.key" class="border-b border-border-subtle px-space-8 py-space-10 align-top" :class="[isNumeric(c) ? 'whitespace-nowrap text-right tabular-nums' : 'text-left', isMuted(row) ? 'text-text-soft' : 'text-text-default']">
+              <!-- A warning about this row (props.issues[row.id]): a marker that opens the note under the row. -->
+              <span v-if="ci === 0 && issueOf(row)" class="inline-flex items-start gap-space-4">
+                <Button native-type="button" label="" color-scheme="secondary" variant="text" size="small" :aria-label="`${openIssue === rowKey(row, i) ? 'Hide' : 'Show'} the warning for ${rowLabel(row)}`" :aria-expanded="openIssue === rowKey(row, i) ? 'true' : 'false'" class="-my-space-4 shrink-0" @onClick="toggleIssue(row, i)">
+                  <template #leftIcon><TriangleAlert :size="16" :stroke-width="2" class="text-icon-warning-low" aria-hidden="true" /></template>
+                </Button>
+                <span>{{ cell(row, c) }}</span>
+              </span>
+              <template v-else>{{ cell(row, c) }}</template>
+            </td>
             <td v-if="editable" class="whitespace-nowrap border-b border-border-subtle px-space-8 py-space-4 text-right align-top">
               <span class="inline-flex gap-space-4">
                 <Button native-type="button" :label="editLabel" color-scheme="primary" variant="text" size="small" :is-disabled="editing !== null" @onClick="startEdit(i)" />
@@ -59,6 +69,18 @@
               </span>
             </td>
           </tr>
+          <!-- The warning's note: what is wrong and how to fix it, under the row it is about. -->
+          <tr v-if="issueOf(row) && openIssue === rowKey(row, i)" :key="`${rowKey(row, i)}-issue`">
+            <td :colspan="tableColumns.length + (hasReorder ? 1 : 0) + (editable ? 1 : 0)" class="border-b border-border-subtle px-space-8 pb-space-12 pt-space-4">
+              <InlineNotice tone="warning" :message="`${issueOf(row).text} ${issueOf(row).fix || ''}`">
+                <template #actions>
+                  <Button native-type="button" :label="editLabel" color-scheme="primary" variant="text" size="small" :is-disabled="editing !== null" @onClick="startEdit(i)" />
+                  <Button native-type="button" label="Dismiss" color-scheme="secondary" variant="minimal" size="small" @onClick="openIssue = null" />
+                </template>
+              </InlineNotice>
+            </td>
+          </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -95,7 +117,8 @@
 import Button from '@/components/Button/Button.vue';
 import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import { baseFieldProps } from '@/componentsV2/FormV2/fields/_baseFieldProps';
-import { GripVertical } from '@development/linarc-icons';
+import { GripVertical, TriangleAlert } from '@development/linarc-icons';
+import InlineNotice from '~/candidates/InlineNotice/InlineNotice.vue';
 import { formatCell } from './format';
 
 const fid = (key) => key.replace(/\./g, '__');
@@ -111,10 +134,14 @@ const asOption = (o) => (typeof o === 'object' ? o : { label: o, value: o });
 
 export default {
   name: 'RepeatField',
-  components: { Button, FormV2, GripVertical },
+  components: { Button, FormV2, GripVertical, TriangleAlert, InlineNotice },
   props: { ...baseFieldProps },
   data() {
-    return { editing: null, draft: {}, locked: [], dragging: null, dragOver: null };
+    return { editing: null, draft: {}, locked: [], dragging: null, dragOver: null, openIssue: null };
+  },
+  watch: {
+    /** `props.openIssue` = "<row id>@<n>": open that row's note (n changes so the same row can be sent to twice). */
+    'field.props.openIssue': { handler(v) { if (v) this.openIssue = String(v).split('@')[0]; }, immediate: true },
   },
   computed: {
     p() {
@@ -194,6 +221,13 @@ export default {
     },
     canRemove(row) {
       return this.p.removable ? this.p.removable(row) : true;
+    },
+    issueOf(row) {
+      return this.p.issues && row && row.id !== undefined ? this.p.issues[row.id] || null : null;
+    },
+    toggleIssue(row, i) {
+      const k = this.rowKey(row, i);
+      this.openIssue = this.openIssue === k ? null : k;
     },
     canDrag(row) {
       return Boolean(this.hasReorder && this.p.reorderable(row));

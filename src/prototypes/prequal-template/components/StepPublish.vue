@@ -6,9 +6,10 @@
     <!-- Missing configuration: one notice each, what blocks publishing first. Warning tone for all of them (red is
          for knockout / expired / rejected, D-17); the disabled Publish button says what blocks. -->
     <section v-if="warnings.length" class="flex flex-col gap-space-8">
-      <InlineNotice v-for="w in warnings" :key="w.id" tone="warning" :message="`${w.blocking ? 'Before publishing: ' : ''}${w.text}`">
+      <InlineNotice v-for="w in warnings" :key="w.id" tone="warning" :message="`${w.blocking ? 'Before publishing: ' : ''}${w.text} ${w.fix || ''}`">
         <template #actions>
-          <Button :label="`Go to ${stepLabel(w.step)}`" color-scheme="primary" variant="text" size="small" @onClick="$emit('go', w.step)" />
+          <!-- The action names the step and the item; the builder scrolls to it and marks it (targetFocus). -->
+          <Button :label="w.go || `Go to ${stepLabel(w.step)}`" color-scheme="primary" variant="text" size="small" @onClick="$emit('go', w.step, w)" />
         </template>
       </InlineNotice>
     </section>
@@ -49,7 +50,7 @@
       <p class="m-0 font-label text-fontsize-14 font-bold leading-lineheight-20 text-text-default">{{ stamp }}</p>
     </section>
 
-    <section v-if="paidChecks.length" class="flex flex-col gap-space-8">
+    <section v-if="paidChecks.length" class="flex flex-col gap-space-8" data-target="billing">
       <h3 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Billing</h3>
       <Checkbox :value="def.billingAcknowledged" :label="billingText" size="small" @input="$emit('input', { billingAcknowledged: $event })" />
     </section>
@@ -74,6 +75,7 @@ import { CHECKS } from '~/modules/prequal/data/wizard';
 import { summaryOf, checklistOf } from '~/modules/prequal/data/templates';
 import { WEIGHT_SECTIONS, weightLabel } from '~/modules/prequal/data/templateCatalog';
 import { STEPS } from '../builderState';
+import targetFocus from './targetFocus';
 
 // A sample subcontractor's section scores, fixed, so the stamp line shows what the weights and bands do.
 const SAMPLE = { safety: 82, financial: 70, experience: 88, capacity: 65, insurance: 90, legal: 100 };
@@ -81,6 +83,7 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD',
 
 export default {
   name: 'StepPublish',
+  mixins: [targetFocus],
   components: { Button, Checkbox, InlineNotice },
   props: {
     def: { type: Object, required: true },

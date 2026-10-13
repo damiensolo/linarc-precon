@@ -40,6 +40,7 @@ Last updated 2026-10-10. Applies to every Prequalification screen and, unless a 
 - **One signal per status:** a check *or* a word *or* a chip, never two together.
 - **Buttons are label-only.** No `+` on Add / New, no Send icon on Submit, no chevrons on Previous / Next / Continue. An icon only where it carries meaning the label lacks (icon-only buttons, the title bar back arrow, a file glyph on a file row).
 - **Notices:** warning / error = tinted fill + tone icon, no outline (InlineNotice); info / success = plain text block.
+- **A warning guides (2026-10-13, template builder):** it says what is wrong, how to fix it and where; its action names the step *and* the item ("Go to Requirements › Safety › Drug and alcohol program"), lands on that item scrolled to the middle of the view with a short warning tint, and the item carries its own marker and note. Never a link to a step the user then has to scan, never a dead link when the fix is on the same screen ("Acknowledge below" scrolls to the checkbox).
 
 ## 4. Components to use (instead of hand-built versions)
 

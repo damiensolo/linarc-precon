@@ -38,12 +38,12 @@
         <div class="relative min-w-0 overflow-x-auto">
           <ProgressStepper :steps="stepperSteps" :current="current" :labels="isNarrow ? 'active' : 'all'" :navigable="true" :fluid="true" aria-label="Template steps" @select="goTo" />
         </div>
-        <StepBasics v-if="current === 'basics'" :def="def" :is-new="isNew" @input="update" @baseline="rebase" />
-        <StepRequirements v-else-if="current === 'requirements'" :def="def" @input="update" />
-        <StepThresholds v-else-if="current === 'thresholds'" :def="def" @input="update" />
-        <StepChecks v-else-if="current === 'checks'" :def="def" @input="update" />
-        <StepScoring v-else-if="current === 'scoring'" :def="def" @input="update" />
-        <StepPublish v-else :def="def" :record="record" :version="nextVersion" :usage="usage" :warnings="warnings" @input="update" @go="goTo" />
+        <StepBasics v-if="current === 'basics'" :focus="focus" :def="def" :is-new="isNew" @input="update" @baseline="rebase" />
+        <StepRequirements v-else-if="current === 'requirements'" :focus="focus" :warnings="warnings" :def="def" @input="update" />
+        <StepThresholds v-else-if="current === 'thresholds'" :focus="focus" :def="def" @input="update" />
+        <StepChecks v-else-if="current === 'checks'" :focus="focus" :def="def" @input="update" />
+        <StepScoring v-else-if="current === 'scoring'" :focus="focus" :def="def" @input="update" />
+        <StepPublish v-else :focus="focus" :def="def" :record="record" :version="nextVersion" :usage="usage" :warnings="warnings" @input="update" @go="goTo" />
       </div>
 
     <!-- Confirmations: publish (what changes for whom), archive, leave with unsaved changes. -->
@@ -159,3 +159,14 @@ export default {
   },
 };
 </script>
+
+<style>
+/* The item a warning sent the admin to (components/targetFocus.js): a warning tint that fades out, so the eye lands on
+   it without anything else moving. Token variables: surface/warning-low-subtle, radius-4. */
+.is-targeted {
+  background-color: var(--surface-warning-low-subtle);
+  border-radius: var(--radius-4);
+  box-shadow: 0 0 0 4px var(--surface-warning-low-subtle);
+  transition: background-color 600ms ease, box-shadow 600ms ease;
+}
+</style>

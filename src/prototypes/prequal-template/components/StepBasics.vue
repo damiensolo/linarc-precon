@@ -19,11 +19,13 @@ import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import { TRADES, SIZE_BANDS } from '~/modules/prequal/data/wizard';
 import { BASELINES, baselineById, PROJECT_TYPES } from '~/modules/prequal/data/templateCatalog';
 import { csiOf } from '~/modules/prequal/data/templates';
+import targetFocus from './targetFocus';
 
 const opts = (list) => list.map((v) => ({ label: v, value: v }));
 
 export default {
   name: 'StepBasics',
+  mixins: [targetFocus],
   components: { FormV2 },
   props: { def: { type: Object, required: true }, isNew: { type: Boolean, default: false } },
   computed: {

@@ -16,6 +16,7 @@
 <script>
 import RepeatField from '~/candidates/FormTableFields/RepeatField.vue';
 import { RULE_TYPES, ruleOutcome, thresholdText, weightLabel, UNITS } from '~/modules/prequal/data/templateCatalog';
+import targetFocus from './targetFocus';
 
 const DESCRIBE = {
   minimum: 'Failing it fails the requirement; a required document or value below it blocks a recommendation to accept.',
@@ -27,6 +28,7 @@ const DESCRIBE = {
 
 export default {
   name: 'StepThresholds',
+  mixins: [targetFocus],
   components: { RepeatField },
   props: { def: { type: Object, required: true } },
   data() {

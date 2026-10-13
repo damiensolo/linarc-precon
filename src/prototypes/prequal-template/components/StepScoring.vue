@@ -2,12 +2,12 @@
   <!-- Step 5: an editable weight table with the total always shown, the recommendation bands, and the knockout rules
        as a dedicated list (PRD UX l. 958–995). MatrixField (candidate, `total` extension 2026-10-12) is the table. -->
   <div class="flex flex-col gap-space-40">
-    <section class="flex flex-col gap-space-4">
+    <section class="flex flex-col gap-space-4" data-target="weights">
       <MatrixField :field="weightsField" :value="weightRows" @input="setWeights" />
       <p class="m-0 font-label text-fontsize-12 leading-lineheight-16 text-text-soft">Score = Σ section score × weight. Confidence is the weighted share of criteria at Evidenced or Verified level and is not configured here.</p>
     </section>
 
-    <section class="flex flex-col gap-space-12">
+    <section class="flex flex-col gap-space-12" data-target="bands">
       <h3 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Recommendation bands</h3>
       <FormV2 :value="bands" :schema="bandsSchema" :flat="true" mode="manual" label-position="top" @input="setBands">
         <template #footer><span /></template>
@@ -34,9 +34,11 @@ import Checkbox from '@/components/Checkbox/Checkbox.vue';
 import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import MatrixField from '~/candidates/FormTableFields/MatrixField.vue';
 import { WEIGHT_SECTIONS, KNOCKOUT_RULES } from '~/modules/prequal/data/templateCatalog';
+import targetFocus from './targetFocus';
 
 export default {
   name: 'StepScoring',
+  mixins: [targetFocus],
   components: { Checkbox, FormV2, MatrixField },
   props: { def: { type: Object, required: true } },
   data() {

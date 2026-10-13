@@ -26,7 +26,7 @@
     </div>
 
     <section v-for="s in def.sections" :key="s.id" class="flex flex-col gap-space-12">
-      <div class="flex flex-wrap items-start justify-between gap-space-8">
+      <div class="flex flex-wrap items-start justify-between gap-space-8" :data-target="`section:${s.id}`">
         <div class="flex min-w-0 flex-1 flex-col gap-space-4">
           <template v-if="s.custom">
             <div class="flex flex-wrap items-start gap-space-12">
@@ -39,6 +39,8 @@
             <h3 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">{{ s.label }}</h3>
             <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">{{ countText(s) }}</span>
           </template>
+          <!-- A warning about the section itself (no title, no fields, an untitled group): said here, with the fix. -->
+          <InlineNotice v-for="w in sectionIssues(s)" :key="w.id" tone="warning" :message="`${w.text} ${w.fix}`" />
         </div>
         <div class="flex items-center gap-space-8">
           <SelectV2 class="w-space-124 min-w-fit" size="small" label="" :options="SECTION_PICK" :value="s.mode" :allow-search="false" :aria-label="`${s.label}: requested?`" @input="setSection(s, { mode: $event })" />
@@ -55,7 +57,7 @@
       <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">A section of your own, with its title and the navigation group it sits under.</span>
     </div>
 
-    <section class="flex flex-col gap-space-12 border-t border-border-subtle pt-space-24">
+    <section class="flex flex-col gap-space-12 border-t border-border-subtle pt-space-24" data-target="documents">
       <div class="flex min-w-0 flex-col">
         <h3 class="m-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Documents</h3>
         <span class="font-label text-fontsize-12 leading-lineheight-16 text-text-soft">{{ documentsText }} · Each required document gets its own upload slot, shown under the field it evidences where there is one.</span>
@@ -71,6 +73,8 @@ import InputV2 from '@/componentsV2/InputV2/InputV2.vue';
 import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
 import SegmentedControl from '@/componentsV2/SegmentedControl/SegmentedControl.vue';
 import RepeatField from '~/candidates/FormTableFields/RepeatField.vue';
+import InlineNotice from '~/candidates/InlineNotice/InlineNotice.vue';
+import targetFocus from './targetFocus';
 import { FIELD_MODES, FIELD_TYPES, WEIGHT_SECTIONS, weightLabel, thresholdText, fieldTypeLabel, EXPIRY_OPTIONS, DOCUMENT_CATALOG } from '~/modules/prequal/data/templateCatalog';
 import { PILLAR_OPTIONS, newCustomSection } from '~/modules/prequal/data/templates';
 
@@ -94,8 +98,9 @@ const stripEditorKeys = (f) => { const { [MOVE]: a, [GROUPED]: b, [GTITLE]: c, [
 
 export default {
   name: 'StepRequirements',
-  components: { Button, InputV2, SelectV2, SegmentedControl, RepeatField },
-  props: { def: { type: Object, required: true } },
+  mixins: [targetFocus],
+  components: { Button, InputV2, SelectV2, SegmentedControl, RepeatField, InlineNotice },
+  props: { def: { type: Object, required: true }, warnings: { type: Array, default: () => [] } },
   data() {
     return { SECTION_PICK, PILLAR_OPTIONS, FILTERS, filter: 'all' };
   },
@@ -135,6 +140,7 @@ export default {
             { key: 'requirements', label: 'What’s required', input: 'textarea', optional: true, rows: 3, format: 'list', help: 'One line per requirement; the subcontractor sees them before uploading.', toInput: lines, fromInput: unlines },
             { key: 'expiry', label: 'Expires', input: 'select', options: EXPIRY_OPTIONS, lockedFor: locked, default: 'None' },
           ],
+          rowTarget: (row) => `doc:${row.id}`,
           addLabel: 'Add custom document',
           editLabel: 'Configure',
           removable: (row) => Boolean(row.custom),
@@ -185,11 +191,28 @@ export default {
         { key: 'options', label: 'Options', input: 'textarea', optional: true, editOnly: true, rows: 4, visibleIf: { field: 'type', op: 'in', value: ['select', 'multiselect'] }, help: 'One option per line.', toInput: lines, fromInput: unlines },
       ];
     },
+    /** Warnings about this section itself (the heading says them) and about its rows (the row's marker). */
+    sectionIssues(s) {
+      return this.warnings.filter((w) => w.target && w.target.key === `section:${s.id}`);
+    },
+    rowIssues(s) {
+      const out = {};
+      for (const w of this.warnings) {
+        const m = w.target && /^row:([^:]+):(.+)$/.exec(w.target.key);
+        if (m && m[1] === s.id) out[m[2]] = { text: w.text, fix: w.fix };
+      }
+      return out;
+    },
     fieldFor(s) {
+      const focused = this.focus && /^row:([^:]+):(.+)$/.exec(this.focus.key);
       return {
         id: `fields-${s.id}`,
         props: {
           columns: this.columns(s),
+          rowTarget: (row) => `row:${s.id}:${row.id}`,
+          issues: this.rowIssues(s),
+          // The row a warning sent the admin to opens its note (and the marker toggles it).
+          openIssue: focused && focused[1] === s.id ? `${focused[2]}@${this.focus.n}` : null,
           addLabel: 'Add custom field',
           editLabel: 'Configure',
           removable: (row) => Boolean(row.custom),
