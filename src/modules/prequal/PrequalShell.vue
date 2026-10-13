@@ -97,7 +97,9 @@ export default {
     headerSize: { type: String, default: 'default' },
   },
   data() {
-    return { PreconstructionModuleIcon, projects, places, selectedTool: 'prequalification' };
+    // The tool whose rail lists this screen (Configure for the template screens, 2026-10-12); Prequalification otherwise.
+    const owner = Object.keys(preconRails).find((tool) => preconRails[tool].some((i) => i.screen === this.screen));
+    return { PreconstructionModuleIcon, projects, places, selectedTool: owner || 'prequalification' };
   },
   computed: {
     tools() {

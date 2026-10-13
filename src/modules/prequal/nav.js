@@ -52,7 +52,7 @@ export const preconRails = {
   ]),
   directory: rail('directory', [['Companies', Building2]]),
   configure: rail('configure', [
-    ['Templates', LayoutTemplate],
+    ['Templates', LayoutTemplate, { screen: 'templates' }],
     ['Qualification Policies', ScrollText],
     ['Permissions', LockKeyhole],
   ]),

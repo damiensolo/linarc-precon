@@ -13,6 +13,7 @@ import { mockRequest } from '~/modules/mock/request';
 import { companyById } from '~/modules/prequal/data';
 import { steps, initialDraft, projectById } from '~/modules/prequal/data/wizard';
 import { createRequest } from '~/modules/prequal/data/session';
+import { matchTemplate, definitionFor } from '~/modules/prequal/data/templates';
 import { currentRoute, go } from '~/modules/prequal/router';
 
 export default {
@@ -22,6 +23,8 @@ export default {
       steps,
       current: route.id && steps.some((s) => s.id === route.id) ? route.id : 'subcontractor',
       draft: initialDraft(),
+      /** The estimator picked a template by hand (Change template): the work context no longer re-selects one. */
+      templateChosen: false,
       adding: false,
       savedAt: null,
       isNarrow: false,
@@ -59,6 +62,8 @@ export default {
         const w = this.draft.work;
         return Boolean(w.project && w.trades.length && w.single && w.aggregate);
       }
+      // No matching template: the estimator picks one on step 3 before going on (PRD UX l. 1135).
+      if (this.current === 'requirements') return Boolean(this.draft.template);
       return true;
     },
     savedText() {
@@ -111,6 +116,21 @@ export default {
     back() {
       if (this.index > 0) this.goTo(steps[this.index - 1].id);
       else this.close();
+    },
+    /** Step 2 edits: the work context picks the template (data/templates.js `matchTemplate`) unless one was chosen. */
+    setWork(patch) {
+      this.draft.work = { ...this.draft.work, ...patch };
+      if (this.templateChosen) return;
+      const m = matchTemplate(this.draft.work);
+      this.setTemplate(m ? m.id : null, { chosen: false });
+    },
+    /** Step 3 › Change template, or the match: the request's checks start as the template's. */
+    setTemplate(id, { chosen = true } = {}) {
+      if (chosen) this.templateChosen = true;
+      if (id === this.draft.template) return;
+      this.draft.template = id;
+      const def = id ? definitionFor(id) : null;
+      this.draft.checks = def ? [...def.checks] : [];
     },
     pickCompany(id) {
       this.draft.companyId = id;

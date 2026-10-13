@@ -6,6 +6,7 @@ import moment from 'moment';
 import './style.css';
 // The Prequalification demo session must patch the shared mock data before any screen reads it (data/session.js).
 import '~/modules/prequal/data/session';
+import '~/modules/prequal/data/templates'; // keeps the template names in step with the session's templates (2026-10-12)
 import App from './App.vue';
 
 Vue.config.productionTip = false;

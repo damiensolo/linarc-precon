@@ -589,3 +589,18 @@ Why it mattered: select filtering on DataGrid columns was broken for every consu
 What changed: P-041 (SelectV2 one-line multi trigger), P-042 (customProps projected, isAnyOf / isNoneOf with a multi-value picker, list cells as sets). Qualified subcontractors and the Review queue use the panel with quick filters; the queue's segmented views are cross-linked with it. Verified in the browser: quick filter → 2 of 8 and badge 1; adding Current to "is any of" → 5 of 8; three statuses → 6; Has conditions and Expires in 30 days stack (badges 2, 3); Clear all → 8; queue segment Knockouts ↔ panel "Queue view is Knockouts", a second view quick filter replaces the first, Clear all returns the segment to All; both themes, no console errors; all screens pass `yarn shot`; build passes.
 Case study: Y. A documented option that a projection layer drops looks like user error until the data path is traced.
 
+## F-070 · 2026-10-12 · Six stepper steps don't fit at 390px, and the stepper's sr-only spans escape a scroll box
+Tags: design-system, tooling
+What happened: the template builder has six steps (the PRD's builder flow). ProgressStepper with `labels="active"` and `fluid` still needs 6 badges + 5 trails (16px minimum each) + 11 gaps ≈ 312px before the active label, so "Requirements" (≈95px) overflows the 350px column at 390px; the wizard's four steps fit. Wrapping the stepper in an `overflow-x-auto` box kept the page from scrolling sideways, except for 4px: the stepper's `sr-only` spans (step name, "(completed)") are absolutely positioned and, with no positioned ancestor inside the scroll box, escaped it. `yarn shot` flagged the 4px.
+Why it mattered: a 4px horizontal page scroll on phones; the stepper is a library component used by every multi-step create screen.
+How it was caught: `yarn shot … 390` overflow warning; bisected by hiding elements until `scrollWidth` dropped.
+What changed: the builder's stepper sits in a `relative min-w-0 overflow-x-auto` box and uses short labels under 640px (`STEPS.short`). Same root cause as F-065 (RepeatField's sr-only "Actions" header). For the library: ProgressStepper's `labels="active"` mode could let trails shrink to 8px and its `nav` could be `relative`, so a six-step strip fits without a scroll box (needs-figma: the Stepper Component's narrow behaviour isn't drawn).
+Case study: Y. Screen-reader-only text is still laid out; it needs a positioned ancestor inside any scroll box, or it widens the page.
+
+## F-071 · 2026-10-12 · A segmented control beside a heading read as a filter
+Tags: design-system, ai-workflow
+What happened: the template builder's Requirements step put a SegmentedControl (Required · Optional · Not requested) in each section's heading to set whether the section is asked. In review the user read it as a filter of the rows below, expected an "All" option, and found it "not working": switching it to Not requested collapsed the table instead of filtering it.
+Why it mattered: the same component means two things on the module's screens (view switch on the Review queue, state on the builder), and a control that looks like a filter but changes data is the wrong affordance for a per-item setting.
+How it was caught: user review 2026-10-12.
+What changed: the section's state is a small SelectV2 (Required · Optional · Not asked) beside the heading; one SegmentedControl at the top of the step is a real filter, All by default, with "n of m fields" when narrowed. Rule for the module: a segmented control switches views or filters a list; a per-item state uses a select or radios (docs/5-ui-patterns.md §4).
+Case study: Y. The affordance decides what people try; a segmented strip says "filter this".

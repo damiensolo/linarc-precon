@@ -18,7 +18,8 @@ import { reviewFor } from './review';
 import { recordFor } from './records';
 import { currency } from '~/candidates/FormTableFields/format';
 import { uploadStore } from './uploads';
-import { session } from './session';
+import { session, isPreview } from './session';
+import { definitionFor, editingDefinitionFor, templateById, templateRecords, displayName, draftVersion, thresholdValueFor, pillarsFor } from './templates';
 
 const GC = { name: 'Harborview Construction Group', logoText: 'HCG' };
 const DISCLOSURE =
@@ -33,7 +34,9 @@ const WC = {
   oakmont: 'ICW Group', prairie: 'State Compensation Insurance Fund', tidewater: 'ICW Group', harbor: 'Republic Indemnity', redwood: 'Zenith Insurance', keystone: 'CopperPoint',
 };
 // Umbrella required by each template.
-const UMBRELLA = { 'elec-md': 5000000, 'mech-lg': 5000000, 'hc-sp': 5000000, 'pw-md': 5000000, 'std-sp': 2000000, 'conc-md': 2000000 };
+const UMBRELLA_BASE = { 'elec-md': 5000000, 'mech-lg': 5000000, 'hc-sp': 5000000, 'pw-md': 5000000, 'std-sp': 2000000, 'conc-md': 2000000 };
+// Templates created in the builder (2026-10-12) take their umbrella limit from their thresholds.
+const UMBRELLA = new Proxy(UMBRELLA_BASE, { get: (t, k) => (k in t ? t[k] : thresholdValueFor(k, 'umbrella') || 2000000) });
 
 // Values the subcontractor entered that disagree with their own document (shown under the field, as on Northstar's).
 const MISMATCH = {
@@ -404,12 +407,135 @@ function decisionFor(r, review) {
   }
 }
 
+// ——— The template's say (Configure › Templates, 2026-10-12) ————————————————————————————————————————————————————————
+// A request follows its template's definition (data/templates.js): custom fields are asked in their section, custom
+// document types get a slot, catalog fields the template switched on are asked (DIR registration on public works), and,
+// for a template edited in the builder, sections and fields switched off are not asked. The six templates that ship
+// mirror the portal's own content, so only their additions apply (`additionsOnly`), keeping every written request as is.
+const PORTAL_TYPE = { textarea: 'textarea', percent: 'number' };
+// What a sample subcontractor answered to a custom field once a section is complete.
+const CUSTOM_ANSWERS = { arcFlash: true, payrollSoftware: 'LCPtracker', designBuild: false, icraStaff: 4 };
+function customValue(tf, type, filled) {
+  if (!filled) return type === 'repeat' || type === 'multiselect' || type === 'matrix' ? [] : null;
+  if (CUSTOM_ANSWERS[tf.id] !== undefined) return CUSTOM_ANSWERS[tf.id];
+  switch (type) {
+    case 'number': return 1;
+    case 'currency': return 100000;
+    case 'yesno': return true;
+    case 'select': return tf.options && tf.options[0] ? tf.options[0] : null;
+    case 'multiselect': return tf.options && tf.options[0] ? [tf.options[0]] : [];
+    case 'date': return TODAY;
+    case 'repeat': case 'matrix': return [];
+    default: return 'Provided';
+  }
+}
+const slugify = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function applyTemplate(def, sections, documents, { project = {}, stage = 'open', additionsOnly = true, states = {} } = {}) {
+  if (!def) return { sections, documents };
+  // Custom sections (the admin's own) come after the base ones; the portal's pillars place them (pillarsFor).
+  const known = new Set(sections.map((x) => x.id));
+  for (const t of def.sections) {
+    if (!t.custom || t.mode === 'off' || known.has(t.id)) continue;
+    sections = [...sections, { id: t.id, label: t.label || 'Untitled section', custom: true, groups: t.groups || [], state: stage === 'open' ? states[t.id] || 'not-started' : 'submitted', fields: [] }];
+  }
+  const tSections = Object.fromEntries(def.sections.map((x) => [x.id, x]));
+  const tDocs = Object.fromEntries(def.documents.map((x) => [x.id, x]));
+  const filledStage = stage !== 'open';
+  const extraDocs = [];
+  const outSections = sections
+    .filter((sec) => {
+      const t = tSections[sec.id];
+      if (additionsOnly || !t || t.mode !== 'off') return true;
+      return sec.id === 'site-security' && !!project.siteSecurity;
+    })
+    .map((sec) => {
+      const t = tSections[sec.id];
+      if (!t) return sec;
+      sec = { ...sec, groups: t.groups || sec.groups || [] };
+      const filled = filledStage || sec.state === 'complete' || sec.state === 'needs-attention';
+      const present = new Set(sec.fields.map((f) => f.id));
+      let fields = sec.fields;
+      if (!additionsOnly) {
+        fields = fields
+          .filter((f) => { const tf = t.fields.find((x) => x.id === f.id); return !tf || tf.mode !== 'off'; })
+          .map((f) => { const tf = t.fields.find((x) => x.id === f.id); return tf ? { ...f, required: tf.mode === 'required', ...(tf.help && !f.detail ? { detail: tf.help } : {}) } : f; });
+      }
+      for (const tf of t.fields) {
+        if (present.has(tf.id) || tf.mode === 'off') continue;
+        if (!tf.custom && additionsOnly && !['dirRegistration', 'facilityClearance'].includes(tf.id)) continue;
+        if (tf.type === 'file') {
+          extraDocs.push({ id: `custom-${tf.id}`, group: 'Custom', label: tf.label, required: tf.mode === 'required', requirements: tf.help ? [tf.help] : ['A readable PDF'], expiryDriver: 'None', status: null, message: tf.mode === 'required' ? 'Required.' : 'Optional.', custom: true });
+          continue;
+        }
+        const type = PORTAL_TYPE[tf.type] || tf.type;
+        fields = [...fields, F(tf.id, tf.label, type, customValue(tf, type, filled), { required: tf.mode === 'required', ...(tf.help ? { detail: tf.help } : {}), ...(tf.options ? { options: tf.options } : {}), ...(tf.evidence ? { evidence: tf.evidence } : {}), ...(tf.group ? { group: tf.group } : {}), custom: !!tf.custom })];
+      }
+      return { ...sec, fields };
+    });
+  const present = new Set(documents.map((d) => d.id));
+  // A custom document type the template names (the GC's questionnaire) keeps the template's label and requirements.
+  let outDocs = documents.map((d) => { const td = tDocs[d.id]; return td && td.custom ? { ...d, label: td.label, requirements: td.requirements.length ? td.requirements : d.requirements } : d; });
+  if (!additionsOnly) {
+    outDocs = outDocs
+      .filter((d) => { const td = tDocs[d.id]; return !td || td.mode !== 'off' || d.required === 'site-security'; })
+      .map((d) => { const td = tDocs[d.id]; return td && d.required !== 'site-security' ? { ...d, required: td.mode === 'required', requirements: td.custom ? td.requirements : d.requirements } : d; });
+  }
+  for (const td of def.documents) {
+    if (!td.custom || td.mode === 'off' || present.has(td.id)) continue;
+    const slot = { id: td.id, group: td.group || 'Custom', label: td.label, required: td.mode === 'required', requirements: td.requirements.length ? td.requirements : ['A readable PDF'], expiryDriver: td.expiry || 'None', status: null, message: td.mode === 'required' ? 'Required.' : 'Optional.', custom: true };
+    if (filledStage) { slot.status = 'passed'; slot.message = 'Document meets the configured requirements.'; slot.file = { name: `${slugify(td.label)}.pdf`, uploadedOn: TODAY }; }
+    extraDocs.push(slot);
+  }
+  return { sections: outSections, documents: [...outDocs, ...extraDocs] };
+}
+
+/**
+ * Preview as subcontractor (builder › Preview, plan T8): the portal a new request on this template would open, for a
+ * sample subcontractor, with nothing answered. Uses the definition being edited (the draft, if any). Never saved.
+ */
+function previewFor(templateId) {
+  const rec = templateById(templateId);
+  const def = rec && editingDefinitionFor(templateId);
+  if (!def) return null;
+  const types = def.projectTypes || [];
+  const projectName = types.includes('site-security') ? 'Harbor Point Clinic' : types.includes('public') || types.includes('prevailing-wage') ? 'Northern Heights' : 'Riverside Commons';
+  const project = PROJECT[projectName] || {};
+  const r = { id: `preview-${templateId}`, company: 'apex', project: projectName, template: templateId, workflow: 'invited', single: 1000000, aggregate: 2000000, submittedOn: null };
+  const all = answers('apex', r);
+  const sMode = (id) => { const t = def.sections.find((x) => x.id === id); return t ? t.mode : 'required'; };
+  const ids = pillars.flatMap((pl) => pl.sections).filter((id) => id !== 'site-security' || sMode(id) !== 'off' || project.siteSecurity);
+  let sections = ids.map((id) => {
+    const meta = SECTION_META[id];
+    const base = { id, label: meta.label, ...(meta.note ? { note: meta.note } : {}), state: 'not-started' };
+    if (id === 'site-security') base.conditional = sMode(id) !== 'off' ? `Required by ${displayName(rec)}` : `Required by ${projectName}`;
+    return { ...base, fields: (all[id] || []).map((f) => (id === 'company' && f.id === 'legalName' ? { ...f, value: 'Sample Subcontractor, Inc.' } : empty(f))) };
+  });
+  const states = Object.fromEntries(sections.map((x) => [x.id, x.state]));
+  let documents = documentsFor(r, 'open', states, null);
+  ({ sections, documents } = applyTemplate(def, sections, documents, { project, stage: 'open', additionsOnly: false }));
+  const trade = def.trades[0] || 'Specialty trade';
+  const version = rec.draft ? draftVersion(rec) : rec.version;
+  const request = {
+    ...requestFor(r, TODAY),
+    template: `${def.name || 'Untitled template'} v${version}`,
+    trade: `${trade.replace(/^\d+\s*/, '')}${/^\d+/.test(trade) ? ` (CSI ${trade.match(/^\d+/)[0]})` : ''}`,
+    contact: { name: 'Sam Carter', email: 'scarter@samplesub.example' },
+    flags: { healthcare: project.sector === 'Healthcare', siteSecurity: sMode('site-security') !== 'off' || !!project.siteSecurity, publicWorks: types.includes('prevailing-wage') || !!project.publicWorks, federal: types.includes('federal') },
+  };
+  return {
+    request, companyName: 'Sample Subcontractor, Inc.', stage: 'open', workflow: 'invited', sections, documents, pillars: pillarsFor(def),
+    infoRequest: null, decision: null, submittedOn: null, lastSaved: null, percent: 0,
+    preview: { template: request.template, status: rec.draft ? 'draft' : rec.status, templateId },
+  };
+}
+
 /**
  * The portal for a request: { request, companyName, stage, workflow, sections, documents, infoRequest, decision,
  * submittedOn, lastSaved }. Null for a request the subcontractor can't see (a draft) or an unknown id.
  */
 export function portalFor(requestId) {
-  const p = buildPortal(requestId);
+  const p = isPreview(requestId) ? previewFor(requestId.slice(8)) : buildPortal(requestId);
   if (!p) return null;
   // This session's uploads (data/uploads.js) replace what the slot showed; a sent response closes the request.
   const uploads = uploadStore.uploads[requestId] || {};
@@ -448,12 +574,15 @@ function buildPortal(requestId) {
   const review = stage === 'open' ? null : reviewFor(requestId);
   const invitedLine = review && review.history.find((h) => /Sent the invitation/.test(h.action));
   const invitedOn = tracking ? tracking.invitedOn : invitedLine ? invitedLine.at.slice(0, 10) : r.submittedOn;
+  const def = definitionFor(r.template);
+  const edited = !!(session.templates && session.templates[r.template]);
   if (requestId === NORTHSTAR.requestId) {
     const nsInfo = stage === 'info' && review ? review.infoRequest : null;
-    let nsDocs = NORTHSTAR_DOCUMENTS;
+    const nsStates = tracking ? Object.fromEntries(tracking.sections.map((x) => [x.id, x.state])) : {};
+    let { sections: nsSections, documents: nsDocs } = applyTemplate(def, NORTHSTAR_SECTIONS, NORTHSTAR_DOCUMENTS, { project: PROJECT[r.project] || {}, stage, additionsOnly: true, states: nsStates });
     if (nsInfo) { const asked = new Set(nsInfo.items.map((id) => infoTarget(id, review)[1]).filter(Boolean)); nsDocs = nsDocs.map((d) => (asked.has(d.id) ? { ...d, requested: true } : d)); }
     return {
-      request: NORTHSTAR, companyName: company.name, stage, workflow: r.workflow, sections: NORTHSTAR_SECTIONS, documents: nsDocs,
+      request: NORTHSTAR, companyName: company.name, stage, workflow: r.workflow, sections: nsSections, documents: nsDocs, pillars: pillarsFor(def),
       infoRequest: nsInfo ? { ...nsInfo, docIds: nsDocs.filter((d) => d.requested).map((d) => d.id) } : null,
       decision: stage === 'decided' ? decisionFor(r, review) : null,
       submittedOn: r.submittedOn, lastSaved: tracking ? tracking.lastSaved : null,
@@ -461,9 +590,10 @@ function buildPortal(requestId) {
     };
   }
   const info = stage === 'info' ? review.infoRequest : null;
-  const sections = sectionsFor(r, stage, info);
+  let sections = sectionsFor(r, stage, info);
   const states = Object.fromEntries(sections.map((s) => [s.id, s.state]));
   let documents = documentsFor(r, stage, states, review);
+  ({ sections, documents } = applyTemplate(def, sections, documents, { project: PROJECT[r.project] || {}, stage, additionsOnly: !edited, states }));
   if (info) {
     const asked = new Set(info.items.map((id) => infoTarget(id, review)[1]).filter(Boolean));
     documents = documents.map((d) => (asked.has(d.id) ? { ...d, requested: true } : d));
@@ -477,6 +607,7 @@ function buildPortal(requestId) {
     workflow: r.workflow,
     sections,
     documents,
+    pillars: pillarsFor(def),
     infoRequest: info ? { ...info, docIds: documents.filter((d) => d.requested).map((d) => d.id) } : null,
     decision: stage === 'decided' ? decisionFor(r, review) : null,
     submittedOn: r.submittedOn,
@@ -487,8 +618,12 @@ function buildPortal(requestId) {
 
 /** Requests with a portal, for the sandbox's record picker: { value, label }. */
 export function portalOptions() {
-  return Object.keys(requestById).filter((id) => STAGE[requestById[id].workflow])
-    .map((id) => ({ value: id, label: `${id.toUpperCase()} · ${companyById[requestById[id].company].name}` }));
+  return [
+    ...Object.keys(requestById).filter((id) => STAGE[requestById[id].workflow])
+      .map((id) => ({ value: id, label: `${id.toUpperCase()} · ${companyById[requestById[id].company].name}` })),
+    // Preview as subcontractor, one per template (Configure › Templates).
+    ...templateRecords().map((t) => ({ value: `preview-${t.id}`, label: `Preview · ${displayName(t)}` })),
+  ];
 }
 
 /**

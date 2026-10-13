@@ -93,6 +93,8 @@
           <span class="inline-flex h-space-24 w-space-24 shrink-0 items-center justify-center rounded-radius-4 bg-surface-neutral font-heading text-fontsize-8 font-bold text-text-default" aria-hidden="true">{{ request.gc.logoText }}</span>
           <span class="truncate font-label text-fontsize-16 font-bold leading-lineheight-24 text-text-default">Prequalification for {{ request.project }}</span>
           <span class="hidden truncate font-label text-fontsize-14 leading-lineheight-20 text-text-subtle lg:inline">· requested by {{ request.gc.name }}</span>
+          <!-- Preview as subcontractor (Configure › Templates): marked as such, with the way back to the builder. -->
+          <StatusChip v-if="preview" label="Preview" status="info" fill-style="outline" type="default" class="shrink-0" />
         </span>
         <span v-else class="flex min-w-0 flex-1 items-center gap-space-8 pr-space-8" :class="{ invisible: !load.indicator || loadFailed }" aria-hidden="true">
           <Skeleton shape="block" class="h-space-24 w-space-24" />
@@ -115,7 +117,8 @@
         <span v-else-if="!loadFailed" class="hidden sm:inline-flex" :class="{ invisible: !load.indicator }" aria-hidden="true">
           <Skeleton shape="block" class="h-space-16 w-space-124" />
         </span>
-        <Button v-if="editable" :label="submitLabel" color-scheme="primary" variant="solid" size="medium" :is-disabled="!load.hasData || !ready.canSubmit || submitted || submitting" @onClick="submit" />
+        <Button v-if="preview" label="Back to template editor" color-scheme="secondary" variant="outline" size="medium" @onClick="backToTemplate" />
+        <Button v-else-if="editable" :label="submitLabel" color-scheme="primary" variant="solid" size="medium" :is-disabled="!load.hasData || !ready.canSubmit || submitted || submitting" @onClick="submit" />
       </template>
 
       <template #content>
@@ -165,6 +168,10 @@
           />
           <PortalDocuments v-else-if="current === 'documents'" :documents="documents" @upload="uploadDocument" @cancel="cancelUpload" @dismiss-error="dismissUploadError" />
           <PortalReview v-else-if="current === 'review'" :readiness="ready" :submitted="submitted" :submitting="submitting" :gc-name="request.gc.name" :stage="stage" :submit-label="submitLabel" @open="goTo" @submit="submit" />
+          <!-- A template preview: plain text, not a notice (D-17: info is a plain text block). -->
+          <p v-if="preview && current !== 'confirmation'" class="m-0 font-label text-fontsize-14 leading-lineheight-20 text-text-subtle">
+            Preview of <strong class="text-text-default">{{ preview.template }}</strong>{{ preview.status === 'draft' ? ' (draft)' : '' }}: what a subcontractor sees on a new request. Nothing here is saved or sent.
+          </p>
           <InlineNotice
             v-if="sectionError && isFormSection"
             tone="warning"
@@ -234,6 +241,7 @@ import AppLayout from '@/componentsV2/AppLayout/AppLayout.vue';
 import FormV2 from '@/componentsV2/FormV2/FormV2.vue';
 import SelectV2 from '@/componentsV2/SelectV2/SelectV2.vue';
 import Button from '@/components/Button/Button.vue';
+import StatusChip from '@/components/StatusChip/StatusChip.vue';
 import PortalSectionNav from '~/candidates/PortalSectionNav/PortalSectionNav.vue';
 import LoadRegion from '~/candidates/LoadRegion/LoadRegion.vue';
 import LoadStatus from '~/candidates/LoadStatus/LoadStatus.vue';
@@ -255,7 +263,7 @@ import { recordUpload, uploadDuration, validateUpload } from '~/modules/prequal/
 import { TODAY } from '~/modules/prequal/data';
 import { SECTION } from '~/modules/prequal/status';
 import { portalFieldTypes, sectionSchema, sectionValues } from '~/modules/prequal/portalFields';
-import { currentRoute } from '~/modules/prequal/router';
+import { currentRoute, go } from '~/modules/prequal/router';
 
 /** The portal shown without a request in the hash: Northstar, the request the portal was first built for. */
 const DEFAULT_REQUEST = 'req-008';
@@ -263,7 +271,7 @@ const DEFAULT_REQUEST = 'req-008';
 function parseHash(id) {
   if (!id) return [null, null];
   const [a, b] = id.split('/');
-  return /^req-\d+$/.test(a) ? [a, b || null] : [null, a];
+  return /^(req-\d+|preview-.+)$/.test(a) ? [a, b || null] : [null, a];
 }
 
 export default {
@@ -274,7 +282,7 @@ export default {
     // Sandbox record picker (App.vue): every request a subcontractor can open.
     records: portalOptions,
   },
-  components: { TopNavBar, AppLayout, FormV2, SelectV2, Button, PortalSectionNav, PortalOverview, PortalDocuments, PortalReview, PortalConfirmation, InlineNotice, LinarcLogoDark, LoadRegion, LoadStatus, Skeleton },
+  components: { TopNavBar, AppLayout, FormV2, SelectV2, Button, StatusChip, PortalSectionNav, PortalOverview, PortalDocuments, PortalReview, PortalConfirmation, InlineNotice, LinarcLogoDark, LoadRegion, LoadStatus, Skeleton },
   provide() {
     // Slots under form fields (portalFields.js DocumentField) reach the upload handlers through FormV2.
     return { portalUploads: { upload: (e) => this.uploadDocument(e), cancel: (e) => this.cancelUpload(e), dismissError: (e) => this.dismissUploadError(e) } };
@@ -286,6 +294,8 @@ export default {
     const known = ['overview', ...portal.sections.map((s) => s.id)];
     return {
       portal,
+      /** Preview as subcontractor (Configure › Templates › Preview): { template, status }; nothing is saved or sent. */
+      preview: portal.preview || null,
       requestId: portal.request.requestId,
       request: portal.request,
       companyName: portal.companyName,
@@ -296,7 +306,8 @@ export default {
       respondedAt: portal.respondedAt || null,
       sections: portal.sections,
       documents: portal.documents,
-      pillars,
+      /** The nav groups for this request: the template's custom sections sit under the group each names. */
+      pillars: portal.pillars || pillars,
       portalFieldTypes,
       schemas: Object.fromEntries(forms.map((s) => [s.id, sectionSchema(s, portal.documents)])),
       // Saved answers (this demo session) win over the starting data.
@@ -325,13 +336,13 @@ export default {
       return Object.fromEntries(this.sections.map((s) => [s.id, s]));
     },
     order() {
-      return ['overview', ...pillars.flatMap((p) => p.sections.filter((id) => this.byId[id]))];
+      return ['overview', ...this.pillars.flatMap((p) => p.sections.filter((id) => this.byId[id]))];
     },
     navGroups() {
       const { byId } = this;
       return [
         { id: 'start', label: '', items: [{ id: 'overview', label: 'Overview' }] },
-        ...pillars.map((p) => ({ id: p.id, label: p.label, items: p.sections.filter((id) => byId[id]).map((id) => ({ id, label: byId[id].label, state: id === 'review' ? undefined : byId[id].state })) })),
+        ...this.pillars.map((p) => ({ id: p.id, label: p.label, items: p.sections.filter((id) => byId[id]).map((id) => ({ id, label: byId[id].label, state: id === 'review' ? undefined : byId[id].state })) })),
       ];
     },
     isFormSection() {
@@ -455,6 +466,12 @@ export default {
       // Disabled while a save runs (no double save). The form values are never touched here, so a failure keeps them.
       if (this.saving || !this.load.hasData) return;
       this.act('save', this.saveLoad, () => new Date(), (at) => { this.savedAt = at; });
+    },
+    /** Preview › Back to template editor: the builder, on the step it was left on (builderState.preview). */
+    backToTemplate() {
+      let target = null;
+      try { target = window.sessionStorage.getItem('linarc-prototypes:preview-return'); } catch (e) { /* storage blocked */ }
+      go('template', target && target.startsWith(`${this.preview.templateId}/`) ? target : this.preview.templateId);
     },
     submit() {
       if (!this.ready.canSubmit || this.submitted || this.submitting) return;
@@ -632,3 +649,9 @@ export default {
   },
 };
 </script>
+
+<style>
+/* A custom group "with a container" (template builder, 2026-10-12): FormV2 layout groups have no box of their own,
+   so the hairline container is drawn here with the token variables. */
+.formv2-group[data-group-id^='box-'] { border: 1px solid var(--border-subtle); border-radius: var(--radius-4); padding: var(--space-16); }
+</style>

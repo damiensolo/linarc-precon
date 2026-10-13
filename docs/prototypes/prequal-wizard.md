@@ -92,3 +92,6 @@ The header is Title Bar / Workflow `Size=Comfortable`: `PrequalShell header-size
 
 ## Update 2026-10-11: Send invite creates the request (D-29)
 Send invite now creates a real request in the demo session (`data/session.js` `createRequest`): next number (REQ-025…), the chosen or new company, project, template, limits, checks. It appears on the Overview as Waiting for subcontractor (the KPI counts it) and the request's tracking view opens (PRD UX l. 1186). Its portal opens from the sandbox record picker; from there the whole flow runs.
+
+## Update 2026-10-12: the template comes from Configure › Templates
+Step 3's template is matched from the definitions in `src/modules/prequal/data/templates.js` (`matchTemplate`: trades, size band, project types; secure-site, federal and prevailing-wage templates only when the work says so) as the work context changes, until the estimator picks one (Change template lists Active templates). No match shows “No matching template” with a pick and keeps Next disabled (PRD UX l. 1135). The checklist is the template's (`checklistOf`, the same list the builder's Review & publish shows) and the request's checks start as the template's. Both versions (`wizardState.setWork` / `setTemplate`).

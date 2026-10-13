@@ -112,6 +112,14 @@ export const SECTION = def([
   ['submitted', 'Submitted', 'success'],
 ]);
 
+/** Requirement template (Configure › Templates, 2026-10-12). Draft: never published or a new version in progress;
+ *  Active: picked by new requests; Archived: kept for the requests that used it, not offered. */
+export const TEMPLATE = def([
+  ['draft', 'Draft', 'neutral'],
+  ['active', 'Active', 'success'],
+  ['archived', 'Archived', 'neutral', 'Not offered to new requests'],
+]);
+
 /**
  * The one status to show for a request in a list: lifecycle once approved, otherwise the outcome once
  * closed, otherwise the workflow stage. Returns a { key, label, tone } entry.

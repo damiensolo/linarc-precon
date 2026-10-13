@@ -97,3 +97,5 @@ Opening a Ready for review request starts it (GC is reviewing, A11). Confirm, Se
 ## Update 2026-10-12: Lintel AI tag tooltip (P-043, §9)
 The "Lintel AI" tag on the Overview summary shows the library Tooltip on hover and keyboard focus: "This content was generated using AI and may contain errors or omissions. Verify important information before relying on it." The library tooltip now wraps at 250px (it was one line). Verified: 250×102 tooltip on hover and on focus, both themes, no console errors. Map: crop frame 03c in Level 2a.
 
+## Update 2026-10-12: tracking follows the template
+The tracking view's section list comes from the request's template (`tracking.js` + `data/templates.js`): a section switched off in Configure › Templates isn't tracked; Site security also follows the project.

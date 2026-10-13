@@ -27,6 +27,7 @@ const empty = () => ({
   uploads: {}, // requestId → slotId → upload result (data/uploads.js)
   resolutions: {}, // requestId → findingId → { resolution, note, by, at }
   events: {}, // requestId → [{ at, actor, action }]   (history lines the session added)
+  templates: {}, // templateId → the whole template record as saved in the builder (data/templates.js, 2026-10-12)
 });
 
 function read() {
@@ -48,6 +49,8 @@ function persist() {
     // Storage full or blocked: the demo still runs, it just won't survive a reload.
   }
 }
+/** For modules that keep their own slice of the session (data/templates.js): write it after a change. */
+export const persistSession = persist;
 
 export function hasChanges() {
   return Object.values(session).some((v) => (Array.isArray(v) ? v.length : Object.keys(v).length));
@@ -102,6 +105,9 @@ for (const [id, p] of Object.entries(session.patches)) apply(id, p);
 
 // ——— Actions ——————————————————————————————————————————————————————————————————————————————————————————————
 
+/** A template preview's portal (`preview-<template id>`, data/portalRequests.js): never written to the session. */
+export const isPreview = (id) => String(id).startsWith('preview-');
+
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 /** Wizard › Send invite. Returns the new request id. */
@@ -133,6 +139,7 @@ export function createRequest({ companyId, newCompany, project, template, single
 
 /** Portal › Save / Save and continue: the subcontractor's answers and section states. */
 export function saveAnswers(id, { values, states, percent, lastSection }) {
+  if (isPreview(id)) return; // Preview as subcontractor (Configure › Templates): nothing is saved or sent.
   const first = !session.answers[id];
   Vue.set(session.answers, id, { values, states, savedAt: nowStamp(), percent });
   const r = requestById[id];
@@ -216,6 +223,7 @@ export function respond(id) {
 
 /** Portal upload results (data/uploads.js). */
 export function recordUploadResult(id, slotId, result) {
+  if (isPreview(id)) return;
   Vue.set(session.uploads, id, { ...(session.uploads[id] || {}), [slotId]: result });
   persist();
 }

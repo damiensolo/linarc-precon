@@ -48,14 +48,15 @@
           @open-request="openRequest"
           @open-record="openRecord"
         />
-        <StepWork v-else-if="current === 'work'" :work="draft.work" @input="draft.work = { ...draft.work, ...$event }" />
+        <StepWork v-else-if="current === 'work'" :work="draft.work" @input="setWork($event)" />
         <StepRequirements
           v-else-if="current === 'requirements'"
           :work="draft.work"
           :template="draft.template"
+          :chosen="templateChosen"
           :checks="draft.checks"
           :company-name="companyName"
-          @template="draft.template = $event"
+          @template="setTemplate($event)"
           @checks="draft.checks = $event"
         />
         <StepInvite v-else :company="recipientCompany" :draft="draft" @edit="goTo" @message="draft.message = $event" />

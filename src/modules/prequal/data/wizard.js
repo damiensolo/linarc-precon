@@ -4,6 +4,7 @@
 // request (Eastgate Data Center) and an expiring qualification with conditions (Northern Heights), so step 1 shows
 // both the duplicate warning and the existing-qualification summary.
 import { companies, companyById, requests, templates } from './index';
+import { definitionFor } from './templates';
 import { requestStatus } from '../status';
 
 export const projects = [
@@ -62,7 +63,8 @@ export function initialDraft() {
       siteSecurity: 'no',
     },
     template: 'mech-lg',
-    checks: CHECKS.filter((k) => k.default).map((k) => k.id),
+    // The template's checks (./templates.js); the estimator can still add or remove them for this request.
+    checks: [...((definitionFor('mech-lg') || { checks: CHECKS.filter((k) => k.default).map((k) => k.id) }).checks)],
     message:
       `Hi ${c.contact.split(' ')[0]},\n\nHarborview Construction Group would like to prequalify Summit Mechanical LLC for HVAC work on Riverside Commons (San Jose, CA). ` +
       'The link below opens a short application; you can save and come back at any time. Please complete it within 10 business days.\n\nThanks,\nJordan Lee',
@@ -75,31 +77,8 @@ export function matchReasons(work) {
   return [work.trades.join(', '), `$${(work.single / 1e6).toFixed(1)}M single`, p ? (p.ownership === 'private' ? 'Private owner' : p.ownership === 'public' ? 'Public owner' : 'Federal') : null, p && p.publicWorks ? 'Public works' : null].filter(Boolean);
 }
 
-// What each template asks for, grouped by the portal's four pillars (docs/prequal/sub-portal-data.md).
-export const TEMPLATE_REQUIREMENTS = {
-  'mech-lg': [
-    { pillar: 'Company identity & compliance', items: [
-      { label: 'Company, ownership and contacts', detail: 'Legal entity, principals, years in business' },
-      { label: 'Licensing', detail: 'C-20 (HVAC) or C-10 license, active, matching legal name' },
-      { label: 'Legal history', detail: 'Litigation, defaults, debarment, last 5 years' },
-    ] },
-    { pillar: 'Safety & insurance', items: [
-      { label: 'Safety record', detail: 'EMR ≤ 1.00 for 3 years · TRIR and DART · OSHA 300A, 3 years' },
-      { label: 'Insurance', detail: 'GL $2M / $4M · Auto $1M · Umbrella $4M · Workers’ compensation' },
-    ] },
-    { pillar: 'Financial capacity', items: [
-      { label: 'Financial statements', detail: 'Reviewed statements, 2 most recent years' },
-      { label: 'Bonding capacity', detail: 'Surety letter: $3M single / $8M aggregate' },
-    ] },
-    { pillar: 'Experience & performance', items: [
-      { label: 'Past projects', detail: '5 projects over $1M in the last 5 years' },
-      { label: 'References', detail: '3 project references' },
-    ] },
-  ],
-};
-TEMPLATE_REQUIREMENTS.default = TEMPLATE_REQUIREMENTS['mech-lg'];
-
-export const templateOptions = Object.entries(templates).map(([value, label]) => ({ value, label }));
+// What each template asks for comes from its definition (./templates.js `checklistOf`, 2026-10-12); the wizard's
+// template options are the Active templates (`activeTemplateOptions`).
 
 /** Request-specific changes to the template, derived from the work context. */
 export function requestChanges(work) {

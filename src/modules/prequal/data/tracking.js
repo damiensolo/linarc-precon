@@ -8,6 +8,7 @@ import { companyById, requestById } from './index';
 import { pillars, sections as portalSections, portalRequest } from './portal';
 import { projects } from './wizard';
 import { session, eventsFor } from './session';
+import { definitionFor, pillarsFor } from './templates';
 
 const addDays = (iso, days) => {
   const d = new Date(`${iso}T00:00:00`);
@@ -79,8 +80,13 @@ function checksFor(r) {
 function sectionsFor(r) {
   const project = PROJECT[r.project];
   const byId = Object.fromEntries(portalSections.map((s) => [s.id, s]));
-  const order = pillars.flatMap((p) => p.sections.filter((id) => id !== 'review').map((id) => ({ id, pillar: p.label, label: byId[id].label })))
-    .filter((s) => s.id !== 'site-security' || (project && project.siteSecurity));
+  // The template's sections (Configure › Templates, 2026-10-12): a section switched off there isn't tracked; Site
+  // security also follows the project.
+  const def = definitionFor(r.template);
+  const mode = (id) => { const t = def && def.sections.find((x) => x.id === id); return t ? t.mode : 'required'; };
+  const label = (id) => (byId[id] ? byId[id].label : ((def && def.sections.find((x) => x.id === id)) || { label: id }).label);
+  const order = pillarsFor(def).flatMap((p) => p.sections.filter((id) => id !== 'review').map((id) => ({ id, pillar: p.label, label: label(id) })))
+    .filter((s) => s.id === 'documents' || (s.id === 'site-security' ? mode(s.id) !== 'off' || (project && project.siteSecurity) : mode(s.id) !== 'off'));
   if (r.id === portalRequest.requestId) return order.map((s) => ({ ...s, state: byId[s.id].state }));
   const pct = PERCENT[r.id] || 0;
   const answerable = order.filter((s) => s.id !== 'documents');

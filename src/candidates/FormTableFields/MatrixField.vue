@@ -22,9 +22,9 @@
         </thead>
         <tbody>
           <tr v-for="(row, i) in rows" :key="i">
-            <td v-for="c in columns" :key="c.key" class="whitespace-nowrap border-b border-border-subtle px-space-8 tabular-nums" :class="[c.key === rowKey ? 'pr-space-24 text-left text-text-subtle' : editable ? 'text-left text-text-default' : 'text-right text-text-default', editable && c.key !== rowKey ? 'py-space-4' : 'py-space-10']">
+            <td v-for="c in columns" :key="c.key" class="whitespace-nowrap border-b border-border-subtle px-space-8 tabular-nums" :class="[c.key === rowKey ? 'pr-space-24 text-left text-text-subtle' : editable ? 'text-left' : 'text-right', c.readOnly ? 'text-text-soft' : 'text-text-default', editable && c.key !== rowKey && !c.readOnly ? 'py-space-4' : 'py-space-10']">
               <InputV2
-                v-if="editable && c.key !== rowKey"
+                v-if="editable && c.key !== rowKey && !c.readOnly"
                 class="w-space-124"
                 type="number"
                 :value="row[c.key] === null || row[c.key] === undefined ? '' : row[c.key]"
@@ -37,6 +37,16 @@
             </td>
           </tr>
         </tbody>
+        <!-- Total line (extension 2026-10-12, template builder): props.total = { label, target, suffix }. The editable
+             columns are summed; off target the line says what to add or remove (warning tone, text not colour alone). -->
+        <tfoot v-if="total">
+          <tr>
+            <td class="px-space-8 pt-space-10 text-left font-bold text-text-default">{{ total.label || 'Total' }}</td>
+            <td v-for="c in columns.slice(1)" :key="c.key" class="whitespace-nowrap px-space-8 pt-space-10 text-left font-bold tabular-nums" :class="c.readOnly ? 'text-text-soft' : totalOk(c) ? 'text-text-default' : 'text-text-warning-low'">
+              {{ sum(c) }}{{ total.suffix || '' }}<template v-if="!c.readOnly && total.target !== undefined"> {{ totalOk(c) ? '✓' : total.target > sum(c) ? `· add ${total.target - sum(c)}${total.suffix || ''}` : `· remove ${sum(c) - total.target}${total.suffix || ''}` }}</template>
+            </td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>
@@ -73,8 +83,17 @@ export default {
     isRequired() {
       return Boolean(this.required || (this.field.props && this.field.props.required));
     },
+    total() {
+      return (this.field.props && this.field.props.total) || null;
+    },
   },
   methods: {
+    sum(c) {
+      return this.rows.reduce((n, r) => n + (Number(r[c.key]) || 0), 0);
+    },
+    totalOk(c) {
+      return this.total.target === undefined || this.sum(c) === this.total.target;
+    },
     cell(row, c) {
       return formatCell(row, c, this.$moment);
     },

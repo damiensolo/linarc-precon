@@ -19,6 +19,9 @@ export const SCREENS = Object.freeze({
   portal: 'prequal-portal',
   review: 'prequal-review',
   record: 'prequal-record',
+  // Configure › Templates (2026-10-12): the list and the builder (`#<template id>`, `#new`, `#<id>/<step>`).
+  templates: 'prequal-templates',
+  template: 'prequal-template',
 });
 
 const SLUG_TO_SCREEN = Object.fromEntries(Object.entries(SCREENS).map(([screen, slug]) => [slug, screen]));

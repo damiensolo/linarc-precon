@@ -51,6 +51,8 @@ Last updated 2026-10-10. Applies to every Prequalification screen and, unless a 
 | Back button in a title bar (detail and create screens) | **HeaderToolIcon `type="back"`** + `PrequalShell header-size="comfortable"` (Title Bar / Workflow `Size=Comfortable`, D-25, P-038) | a minimal Button with a chevron (doesn't read as a button) |
 | Step navigation bar | AppLayout bottom panel (`PrequalShell` `bottom-panel`) | buttons at the end of a long scroll |
 | Page sections as tabs | **TabNavigation** (P-028) | SegmentedControl (that's for view modes) |
+| Switching a list's view or filtering its rows | **SegmentedControl**, with All first and selected by default (F-071) | a select |
+| A per-item state beside its heading (a section is Required / Optional / Not asked) | **SelectV2** small, or radios | a SegmentedControl, which reads as a filter (F-071) |
 | A value compared across sources | **EvidenceComparison** (candidate) | ad-hoc tables |
 | A right panel from `PrequalShell` | `right-panel` prop (sets enabled **and** visible, F-046) | AppLayout `right-panel-enabled` alone (stays hidden) |
 | Upload zone | library DropArea (icon 36px, 2px stroke, `border/default`, outline browse button, P-020) | — |

@@ -41,7 +41,16 @@ const ComputedField = {
   },
 };
 
-export const portalFieldTypes = { document: DocumentField, notice: NoticeField, computed: ComputedField, repeat: RepeatField, matrix: MatrixField };
+/** `heading` field: a group's title inside a section (custom groups from the template builder, 2026-10-12). */
+const HeadingField = {
+  name: 'HeadingField',
+  props: { ...baseFieldProps },
+  render(h) {
+    return h('h3', { class: 'm-0 font-heading text-fontsize-16 font-bold leading-lineheight-24 text-text-default' }, this.field.props.title);
+  },
+};
+
+export const portalFieldTypes = { document: DocumentField, notice: NoticeField, computed: ComputedField, repeat: RepeatField, matrix: MatrixField, heading: HeadingField };
 
 // Column definitions for repeat and matrix fields, by field id. For the row editor (RepeatField, 2026-10-11): `input`
 // (text | number | date | select) overrides the type the format implies, `options` for selects, `optional` columns
@@ -79,7 +88,7 @@ const OPTIONS = {
 const withSelected = (list, selected) => [...list, ...(selected || []).filter((v) => !list.includes(v))].map((v) => ({ label: v, value: v }));
 
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const WIDE = new Set(['repeat', 'matrix', 'address', 'multiselect', 'document', 'notice']);
+const WIDE = new Set(['repeat', 'matrix', 'address', 'multiselect', 'document', 'notice', 'textarea']);
 
 /** FormV2 schema for one portal section; `documents` are the request's slots (evidence shown under its field). */
 export function sectionSchema(section, documents = []) {
@@ -123,6 +132,13 @@ export function sectionSchema(section, documents = []) {
       case 'computed':
         fields.push({ ...base, type: 'computed', props: { display: currency(f.value), formula: f.formula } });
         break;
+      // Custom field types from the template builder (2026-10-12): long text and dates.
+      case 'textarea':
+        fields.push({ ...base, type: 'textarea', props: { rows: 3 } });
+        break;
+      case 'date':
+        fields.push({ ...base, type: 'date' });
+        break;
       default:
         fields.push({ ...base, type: 'text' });
     }
@@ -130,7 +146,36 @@ export function sectionSchema(section, documents = []) {
     if (f.evidence && docById[f.evidence]) fields.push({ id: `${f.id}__doc`, type: 'document', colSpan: 'full', props: { doc: docById[f.evidence] } });
   }
   // 24px between fields (was 16): with the table subsections' own padding this gives ~40px between blocks (D-17).
-  return { sections: [{ id: section.id, layout: { columns: 2, gap: '24px' }, fields }] };
+  return { sections: [{ id: section.id, layout: { columns: 2, gap: '24px' }, fields: grouped(fields, section) }] };
+}
+
+/**
+ * Custom groups (template builder, 2026-10-12): fields assigned to a group render together, at the first one's
+ * position, under the group's heading; a group "with a container" is a FormV2 layout group whose id starts with
+ * `box-` (the portal draws its hairline box). Fields without a group stay flat.
+ */
+function grouped(fields, section) {
+  const groups = section.groups || [];
+  if (!groups.length) return fields;
+  const groupOf = Object.fromEntries((section.fields || []).map((f) => [f.id, f.group || null]));
+  const idOf = (fid) => fid.replace(/__(notice|doc)$/, '');
+  const out = [];
+  const done = new Set();
+  for (const f of fields) {
+    const gid = groupOf[idOf(f.id)];
+    if (!gid || !groups.some((g) => g.id === gid)) { out.push(f); continue; }
+    if (done.has(gid)) continue;
+    done.add(gid);
+    const g = groups.find((x) => x.id === gid);
+    const children = fields.filter((x) => groupOf[idOf(x.id)] === gid);
+    out.push({
+      id: `${g.boxed ? 'box' : 'grp'}-${gid}`,
+      colSpan: 'full',
+      layout: { mode: 'grid', columns: 2, gap: '24px' },
+      children: [{ id: `heading-${gid}`, type: 'heading', colSpan: 'full', labelPosition: 'hidden', props: { title: g.label || 'Untitled group' } }, ...children],
+    });
+  }
+  return out;
 }
 
 /** Initial values for FormV2, keyed by field id, in the shapes the field types expect. */
