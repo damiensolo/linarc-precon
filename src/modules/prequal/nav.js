@@ -34,7 +34,8 @@ import {
 } from '@development/linarc-icons';
 
 export const preconTools = [
-  // Not built (2026-10-14): selecting it shows this note on a blank page instead of a rail and screen (PrequalShell).
+  // Not built (2026-10-14): selecting it shows its rail (inert, to show what's coming) and this note in place of the
+  // screen (PrequalShell).
   {
     id: 'bidding',
     label: 'Bidding',

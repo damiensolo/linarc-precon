@@ -31,18 +31,7 @@
       </template>
     </TopNavBar>
 
-    <!-- A tool that isn't built yet (Bidding, 2026-10-14): a blank page with a note and a way back, in place of the rail
-         and the screen. Composed from type tokens and Button: the library has no page-level empty state (NoData is
-         legacy with hardcoded colours; MegaMenuEmptyState is the menu's). -->
-    <main v-if="comingSoon" class="flex flex-1 min-h-0 items-center justify-center overflow-y-auto px-space-16 py-space-48">
-      <section class="flex max-w-md flex-col items-center gap-space-8 text-center font-label" aria-labelledby="coming-soon-h">
-        <h1 id="coming-soon-h" class="m-0 font-heading text-fontsize-20 font-bold leading-lineheight-24 text-text-default">{{ comingSoon.title }}</h1>
-        <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ comingSoon.body }}</p>
-        <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">In the meantime, explore the Prequalification Tool.</p>
-        <Button class="mt-space-16" label="Go to Prequalification Tool" color-scheme="primary" variant="solid" size="medium" @onClick="toPrequalification" />
-      </section>
-    </main>
-    <div v-else class="flex flex-1 min-h-0">
+    <div class="flex flex-1 min-h-0">
       <SideNavV2
         class="hidden md:flex h-full shrink-0"
         :aria-label="currentTool.label"
@@ -52,7 +41,20 @@
         @click="onNav"
       />
 
+      <!-- A tool that isn't built yet (Bidding, 2026-10-14): its rail stays to show what's coming (items inert), and the
+           page is blank but for a note and a way back. Composed from type tokens and Button: the library has no
+           page-level empty state (NoData is legacy with hardcoded colours; MegaMenuEmptyState is the menu's). -->
+      <main v-if="comingSoon" class="flex flex-1 min-w-0 items-center justify-center overflow-y-auto bg-surface-page px-space-16 py-space-48">
+        <section class="flex max-w-md flex-col items-center gap-space-8 text-center font-label" aria-labelledby="coming-soon-h">
+          <h1 id="coming-soon-h" class="m-0 font-heading text-fontsize-20 font-bold leading-lineheight-24 text-text-default">{{ comingSoon.title }}</h1>
+          <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ comingSoon.body }}</p>
+          <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">In the meantime, explore the Prequalification Tool.</p>
+          <Button class="mt-space-16" label="Go to Prequalification Tool" color-scheme="primary" variant="solid" size="medium" @onClick="toPrequalification" />
+        </section>
+      </main>
+
       <AppLayout
+        v-else
         class="flex-1 min-w-0"
         :left-panel-enabled="false"
         :right-panel-enabled="rightPanel"
