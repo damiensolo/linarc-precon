@@ -34,7 +34,13 @@ import {
 } from '@development/linarc-icons';
 
 export const preconTools = [
-  { id: 'bidding', label: 'Bidding', icon: Gavel },
+  // Not built (2026-10-14): selecting it shows this note on a blank page instead of a rail and screen (PrequalShell).
+  {
+    id: 'bidding',
+    label: 'Bidding',
+    icon: Gavel,
+    comingSoon: { title: 'Bidding is coming soon', body: 'We’re building this feature to make it easier to submit and manage bids.' },
+  },
   { id: 'prequalification', label: 'Prequalification', icon: ShieldCheck },
   // Hidden for now (asked 2026-10-13): no Directory screens are built yet.
   // { id: 'directory', label: 'Directory', icon: BookUser },

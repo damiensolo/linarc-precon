@@ -31,7 +31,18 @@
       </template>
     </TopNavBar>
 
-    <div class="flex flex-1 min-h-0">
+    <!-- A tool that isn't built yet (Bidding, 2026-10-14): a blank page with a note and a way back, in place of the rail
+         and the screen. Composed from type tokens and Button: the library has no page-level empty state (NoData is
+         legacy with hardcoded colours; MegaMenuEmptyState is the menu's). -->
+    <main v-if="comingSoon" class="flex flex-1 min-h-0 items-center justify-center overflow-y-auto px-space-16 py-space-48">
+      <section class="flex max-w-md flex-col items-center gap-space-8 text-center font-label" aria-labelledby="coming-soon-h">
+        <h1 id="coming-soon-h" class="m-0 font-heading text-fontsize-20 font-bold leading-lineheight-24 text-text-default">{{ comingSoon.title }}</h1>
+        <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">{{ comingSoon.body }}</p>
+        <p class="m-0 text-fontsize-14 leading-lineheight-20 text-text-subtle">In the meantime, explore the Prequalification Tool.</p>
+        <Button class="mt-space-16" label="Go to Prequalification Tool" color-scheme="primary" variant="solid" size="medium" @onClick="toPrequalification" />
+      </section>
+    </main>
+    <div v-else class="flex flex-1 min-h-0">
       <SideNavV2
         class="hidden md:flex h-full shrink-0"
         :aria-label="currentTool.label"
@@ -86,13 +97,14 @@ import TopNavBar from '@/components/TopNavBar/index.vue';
 import StaticMegaMenu from '@/components/MegaMenu/StaticMegaMenu/index.vue';
 import SideNavV2 from '@/componentsV2/SideNavV2/SideNavV2.vue';
 import AppLayout from '@/componentsV2/AppLayout/AppLayout.vue';
+import Button from '@/components/Button/Button.vue';
 import { preconTools, preconRails, projects, places, quickCreate } from './nav';
 import { go, isBuilt } from './router';
 import { accountWithSettings, overflowWithSettings, onAccountClick } from '~/modules/sandbox';
 
 export default {
   name: 'PrequalShell',
-  components: { TopNavBar, StaticMegaMenu, SideNavV2, AppLayout },
+  components: { TopNavBar, StaticMegaMenu, SideNavV2, AppLayout, Button },
   props: {
     /** Screen name from router.js (dashboard, queue, qualified, review, record …); selects the rail item. */
     screen: { type: String, required: true },
@@ -121,6 +133,10 @@ export default {
     tools() {
       return preconTools.map((t) => ({ ...t, isSelected: t.id === this.selectedTool }));
     },
+    /** The selected tool's "coming soon" note (nav.js `comingSoon`), or null when the tool is built. */
+    comingSoon() {
+      return this.currentTool.comingSoon || null;
+    },
     currentTool() {
       return preconTools.find((t) => t.id === this.selectedTool);
     },
@@ -136,6 +152,11 @@ export default {
     onAccountClick,
     onTool({ id }) {
       if (preconRails[id]) this.selectedTool = id;
+    },
+    /** From a coming-soon tool: back to the Prequalification tool, on its Overview. */
+    toPrequalification() {
+      this.selectedTool = 'prequalification';
+      if (this.screen !== 'dashboard') go('dashboard');
     },
     onNav({ id }) {
       const item = this.rail.find((i) => i.id === id);
