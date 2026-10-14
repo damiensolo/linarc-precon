@@ -3,13 +3,38 @@ import PortalVue from 'portal-vue';
 import Vuelidate from 'vuelidate';
 import Vuex from 'vuex';
 import moment from 'moment';
+import { inject as injectAnalytics, pageview } from '@vercel/analytics';
 import './style.css';
 // The Prequalification demo session must patch the shared mock data before any screen reads it (data/session.js).
 import '~/modules/prequal/data/session';
 import '~/modules/prequal/data/templates'; // keeps the template names in step with the session's templates (2026-10-12)
+import { NAVIGATE_EVENT } from '~/modules/prequal/router';
 import App from './App.vue';
 
 Vue.config.productionTip = false;
+
+// Vercel Web Analytics (2026-10-14). The framework-agnostic `inject()`: the docs' `@vercel/analytics/next` and `/vue`
+// entries need Next or vue-router, and this app routes itself (modules/prequal/router.js, pushState + an event).
+// Every screen lives at `/?p=<slug>` and Vercel keeps only the path, so `beforeSend` reports the slug as the path
+// (`/prequal-review`) and drops the record hash and the sandbox params (theme, chrome, latency). The script's own
+// pushState tracking is off: it ignores a navigation whose pathname doesn't change, which is every one here, so the
+// router's navigate event and Back / Forward report the view themselves. In dev the script only logs to the console;
+// nothing is sent. Needs Web Analytics enabled on the Vercel project to collect anything.
+const pagePath = () => `/${new URLSearchParams(window.location.search).get('p') || ''}`;
+injectAnalytics({
+  mode: import.meta.env.PROD ? 'production' : 'development',
+  disableAutoTrack: true,
+  beforeSend(event) {
+    const url = new URL(event.url);
+    url.pathname = pagePath();
+    url.search = '';
+    url.hash = '';
+    return { ...event, url: url.toString() };
+  },
+});
+pageview({ path: pagePath() }); // the first view: auto-tracking off means the script doesn't send it either
+window.addEventListener(NAVIGATE_EVENT, () => pageview({ path: pagePath() }));
+window.addEventListener('popstate', () => pageview({ path: pagePath() }));
 
 // Same globals the library's install() / Storybook preview register (src/build.js, .storybook/preview.js).
 Vue.use(PortalVue);
