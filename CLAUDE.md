@@ -13,7 +13,7 @@ Sandbox for building **view prototypes** from Figma using the Linarc design syst
 - `yarn build` → production build (catches import/compile errors)
 - `yarn deploy` → build and publish to the Vercel production URL (`yarn deploy:preview` for a throwaway preview URL); see Hosting below
 - Sandbox **record picker**: screens that declare `prototype.records` (review, record, portal) get a second select in the sandbox bar to open any request (D-27).
-- `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core (if Edge fails to launch, set `EDGE_PATH` to Chrome, F-041); the dev server must be running. Write output to the scratchpad, not the repo.
+- `yarn shot <slug>[#hash] [out-dir] [port] [widths] [height]` → full-page light + dark PNGs at exact viewport widths (default 1440, 1024 and 390), plus console errors and a horizontal-overflow warning. Exits 1 on errors. Uses the installed Edge via puppeteer-core (works again since 2026-10-15; if it fails to launch after an Edge update, restart Edge or set `EDGE_PATH` to Chrome, F-041); the dev server must be running. Write output to the scratchpad, not the repo.
 
 ## Rules
 

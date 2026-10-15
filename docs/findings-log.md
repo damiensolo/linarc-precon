@@ -360,6 +360,7 @@ How it was caught: (1) the user's screenshot; (2) every `yarn shot` and one-off 
 What changed: App.vue uses SelectV2. Edge is unresolved; restart Edge (or Windows) to finish the update, or set `EDGE_PATH` to another Chromium browser.
 Case study: N
 Resolved: 2026-10-09, `EDGE_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" yarn shot …` works (Chrome is installed). Edge still fails while the 153→154 update waits for a restart.
+Edge fixed: 2026-10-15. The update finished (one version folder, Edge 155.0.4283.45); puppeteer-core launches it headless (`true` and `'shell'`), and `yarn shot prequal-templates` with no `EDGE_PATH` captured all six images in 24s, exit 0. If it breaks again after an update, check for two version folders and restart Edge.
 
 ## F-045 · 2026-10-09 · The dev server's Tailwind missed classes that only new files use
 (Renumbered from F-041 on 2026-10-09: a parallel session had used F-041.)
