@@ -605,3 +605,11 @@ Why it mattered: the same component means two things on the module's screens (vi
 How it was caught: user review 2026-10-12.
 What changed: the section's state is a small SelectV2 (Required · Optional · Not asked) beside the heading; one SegmentedControl at the top of the step is a real filter, All by default, with "n of m fields" when narrowed. Rule for the module: a segmented control switches views or filters a list; a per-item state uses a select or radios (docs/5-ui-patterns.md §4).
 Case study: Y. The affordance decides what people try; a segmented strip says "filter this".
+
+## F-072 · 2026-10-15 · The sandbox became a template: linarc-prototype-base
+Tags: tooling, ai-workflow
+What happened: the reusable parts of this repo were extracted into a sibling template, `../linarc-prototype-base` (wiring with a `LINARC_DS_PATH` override, sandbox bar, a generic `AppShell` / `router` / `status` under `src/modules/app/`, the demo session, the loading candidates and InlineNotice, two example screens, CLAUDE.md, the two skills, the docs). New there: `yarn check`, a conventions linter for the rules a grep can enforce (hex, palette, raw / arbitrary values, bare `border-*`, `<script setup>`, reload navigation); run against this repo's `src` it reports no violations. `yarn create-app <name>` scaffolds a new app next to the library; a scaffolded app installed and passed `yarn verify` on the first try. While verifying, `yarn shot` on port 5174 captured this repo's Templates screen instead of the template's example: another session's server held the port and an unknown `?p=` slug falls back to the first prototype, with exit 0. Noted in the template's verification doc.
+Why it mattered: the next module starts past the wiring (F-002, F-003, F-015, F-016, F-036, F-065) and past the review conventions this module paid for.
+How it was caught: —
+What changed: the template (D-33 there). Rules that applied to every app now live in both places; module-specific ones stayed here. A fix here that applies to every app should be mirrored into the template.
+Case study: Y. A template is the cheapest way to make conventions stick.
